@@ -1,4 +1,3 @@
-// components/UserPreferencesScreen.tsx
 import React, { useState, useEffect } from "react";
 import { ChevronRight, Globe, Check } from "lucide-react";
 import type { UnitSystem, UnitPreferences } from "../types";

@@ -10,10 +10,8 @@ only use a limited amount of external libraries for components, if possible only
 **Purpose**: User onboarding and methodology explanation
 
 **Key Elements**:
-- Hero section explaining scientific approach
 - Plan level overview cards (4 levels) with distance examples in both units
 - Clear "Start Assessment" CTA
-- Brief methodology credibility indicators
 
 **User Actions**:
 - Click "Start Assessment"
