@@ -1,1396 +1,769 @@
-import React, { useState } from "react";
+/* eslint-disable no-console */
+import React, { useState, useEffect } from "react";
 import {
-  ChevronRight,
-  ChevronLeft,
-  Download,
-  Clock,
+  ArrowRight,
+  Globe,
+  Play,
   Target,
-  Activity,
-  MapPin,
-  Calendar,
-  FileText,
+  Trophy,
+  Zap,
+  CheckCircle,
 } from "lucide-react";
 
-// Type definitions
-interface RaceTime {
-  distance: string;
-  time: string;
+// Types and Interfaces
+interface UnitPreferences {
+  system: "metric" | "imperial";
+  distance: "km" | "miles";
+  pace: "min/km" | "min/mile";
+  altitude: "meters" | "feet";
 }
 
-interface UserProfile {
-  experienceLevel: string;
-  weeklyMileage: number;
-  recentRace?: RaceTime;
-  planLevel: string;
-  trainingDays: boolean[];
-  sessionDuration: number;
-  goalRace: string;
-  altitude: number;
-  fitnessScore: number;
-}
-
-interface TrainingPaces {
-  easyRecovery: string;
-  easyAerobic: string;
-  marathon: string;
-  tempo: {
-    per400m: string;
-    perKm: string;
-    perMile: string;
+interface PlanLevel {
+  id: "foundation" | "intermediate" | "advanced" | "elite";
+  name: string;
+  subtitle: string;
+  weeklyMileage: {
+    metric: string;
+    imperial: string;
   };
-  interval: {
-    per400m: string;
-    per800m: string;
-    per1200m: string;
-  };
-  repetition: {
-    per200m: string;
-    per300m: string;
-    per400m: string;
-  };
-}
-
-interface PhaseStructure {
-  phaseNumber: number;
-  duration: number;
-  focus: string;
   description: string;
-  targetMileage: number;
-  qualitySessions: number;
+  qualitySessions: string;
+  suitableFor: string;
+  color: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
-interface TrainingPlan {
-  metadata: {
-    planLevel: string;
-    fitnessScore: number;
-    generatedDate: string;
-  };
-  paces: TrainingPaces;
-  phases: PhaseStructure[];
-  altitudeAdjusted: boolean;
-}
+// Static Data - Plan Levels
+const PLAN_LEVELS: PlanLevel[] = [
+  {
+    id: "foundation",
+    name: "Foundation Plan",
+    subtitle: "Beginner/Returning",
+    weeklyMileage: {
+      metric: "0-32 km per week",
+      imperial: "0-20 miles per week",
+    },
+    description:
+      "Building running habit and basic fitness with gradual progression",
+    qualitySessions: "0-1 per week",
+    suitableFor: "New runners or returning after extended break",
+    color: "bg-green-500",
+    icon: Play,
+  },
+  {
+    id: "intermediate",
+    name: "Intermediate Plan",
+    subtitle: "Recreational Runner",
+    weeklyMileage: {
+      metric: "24-56 km per week",
+      imperial: "15-35 miles per week",
+    },
+    description: "Developing aerobic base with light speed work introduction",
+    qualitySessions: "1-2 per week",
+    suitableFor: "Regular recreational runners",
+    color: "bg-blue-500",
+    icon: Target,
+  },
+  {
+    id: "advanced",
+    name: "Advanced Plan",
+    subtitle: "Serious Runner",
+    weeklyMileage: {
+      metric: "48-88 km per week",
+      imperial: "30-55 miles per week",
+    },
+    description:
+      "Structured training with all intensity types and higher volume",
+    qualitySessions: "2-3 per week",
+    suitableFor: "Committed recreational to sub-elite runners",
+    color: "bg-purple-500",
+    icon: Zap,
+  },
+  {
+    id: "elite",
+    name: "Elite Plan",
+    subtitle: "Competitive Runner",
+    weeklyMileage: {
+      metric: "80-128+ km per week",
+      imperial: "50-80+ miles per week",
+    },
+    description: "High-volume training with sophisticated workout structure",
+    qualitySessions: "3+ per week",
+    suitableFor: "Competitive runners with significant time commitment",
+    color: "bg-red-500",
+    icon: Trophy,
+  },
+];
 
-// Embedded fitness score tables
-const RACE_TO_FITNESS_TABLE: Record<string, Record<string, number>> = {
-  "1500m": {
-    "4:00": 85,
-    "4:15": 82,
-    "4:30": 79,
-    "4:45": 76,
-    "5:00": 73,
-    "5:15": 70,
-    "5:30": 67,
-    "5:45": 64,
-    "6:00": 61,
-    "6:30": 55,
-    "7:00": 50,
-    "7:30": 46,
-    "8:00": 42,
-    "8:30": 39,
-    "9:00": 36,
-  },
-  mile: {
-    "4:20": 85,
-    "4:35": 82,
-    "4:50": 79,
-    "5:05": 76,
-    "5:20": 73,
-    "5:35": 70,
-    "5:50": 67,
-    "6:05": 64,
-    "6:20": 61,
-    "6:50": 55,
-    "7:20": 50,
-    "7:50": 46,
-    "8:20": 42,
-    "8:50": 39,
-    "9:20": 36,
-  },
-  "5k": {
-    "15:00": 85,
-    "16:00": 82,
-    "17:00": 79,
-    "18:00": 76,
-    "19:00": 73,
-    "20:00": 70,
-    "21:00": 67,
-    "22:00": 64,
-    "23:00": 61,
-    "25:00": 55,
-    "27:00": 50,
-    "29:00": 46,
-    "31:00": 42,
-    "33:00": 39,
-    "35:00": 36,
-  },
-  "10k": {
-    "31:00": 85,
-    "33:00": 82,
-    "35:00": 79,
-    "37:00": 76,
-    "39:00": 73,
-    "41:00": 70,
-    "43:00": 67,
-    "45:00": 64,
-    "47:00": 61,
-    "51:00": 55,
-    "55:00": 50,
-    "59:00": 46,
-    "63:00": 42,
-    "67:00": 39,
-    "71:00": 36,
-  },
-  half: {
-    "1:08:00": 85,
-    "1:12:00": 82,
-    "1:16:00": 79,
-    "1:20:00": 76,
-    "1:24:00": 73,
-    "1:28:00": 70,
-    "1:32:00": 67,
-    "1:36:00": 64,
-    "1:40:00": 61,
-    "1:48:00": 55,
-    "1:56:00": 50,
-    "2:04:00": 46,
-    "2:12:00": 42,
-    "2:20:00": 39,
-    "2:28:00": 36,
-  },
-  marathon: {
-    "2:25:00": 85,
-    "2:35:00": 82,
-    "2:45:00": 79,
-    "2:55:00": 76,
-    "3:05:00": 73,
-    "3:15:00": 70,
-    "3:25:00": 67,
-    "3:35:00": 64,
-    "3:45:00": 61,
-    "4:05:00": 55,
-    "4:25:00": 50,
-    "4:45:00": 46,
-    "5:05:00": 42,
-    "5:25:00": 39,
-    "5:45:00": 36,
-  },
+// Utility Functions
+const detectRegionalUnits = (): "metric" | "imperial" => {
+  const locale = navigator.language || "en-US";
+  const country = locale.split("-")[1]?.toUpperCase();
+
+  // Countries that primarily use imperial system
+  const imperialCountries = ["US", "GB", "LR", "MM"];
+
+  return imperialCountries.includes(country || "") ? "imperial" : "metric";
 };
 
-const FITNESS_TO_PACES_TABLE: Record<number, TrainingPaces> = {
-  85: {
-    easyRecovery: "6:00-6:30",
-    easyAerobic: "5:30-6:00",
-    marathon: "5:30",
-    tempo: { per400m: "1:18", perKm: "3:15", perMile: "5:15" },
-    interval: { per400m: "1:10", per800m: "2:22", per1200m: "3:35" },
-    repetition: { per200m: "0:33", per300m: "0:50", per400m: "1:07" },
-  },
-  82: {
-    easyRecovery: "6:15-6:45",
-    easyAerobic: "5:45-6:15",
-    marathon: "5:45",
-    tempo: { per400m: "1:22", perKm: "3:25", perMile: "5:30" },
-    interval: { per400m: "1:14", per800m: "2:30", per1200m: "3:47" },
-    repetition: { per200m: "0:35", per300m: "0:53", per400m: "1:11" },
-  },
-  79: {
-    easyRecovery: "6:30-7:00",
-    easyAerobic: "6:00-6:30",
-    marathon: "6:00",
-    tempo: { per400m: "1:26", perKm: "3:35", perMile: "5:45" },
-    interval: { per400m: "1:18", per800m: "2:38", per1200m: "3:59" },
-    repetition: { per200m: "0:37", per300m: "0:56", per400m: "1:15" },
-  },
-  76: {
-    easyRecovery: "6:45-7:15",
-    easyAerobic: "6:15-6:45",
-    marathon: "6:15",
-    tempo: { per400m: "1:30", perKm: "3:45", perMile: "6:00" },
-    interval: { per400m: "1:22", per800m: "2:46", per1200m: "4:11" },
-    repetition: { per200m: "0:39", per300m: "0:59", per400m: "1:19" },
-  },
-  73: {
-    easyRecovery: "7:00-7:30",
-    easyAerobic: "6:30-7:00",
-    marathon: "6:30",
-    tempo: { per400m: "1:34", perKm: "3:55", perMile: "6:15" },
-    interval: { per400m: "1:26", per800m: "2:54", per1200m: "4:23" },
-    repetition: { per200m: "0:41", per300m: "1:02", per400m: "1:23" },
-  },
-  70: {
-    easyRecovery: "7:15-7:45",
-    easyAerobic: "6:45-7:15",
-    marathon: "6:45",
-    tempo: { per400m: "1:38", perKm: "4:05", perMile: "6:30" },
-    interval: { per400m: "1:30", per800m: "3:02", per1200m: "4:35" },
-    repetition: { per200m: "0:43", per300m: "1:05", per400m: "1:27" },
-  },
-  67: {
-    easyRecovery: "7:30-8:00",
-    easyAerobic: "7:00-7:30",
-    marathon: "7:00",
-    tempo: { per400m: "1:42", perKm: "4:15", perMile: "6:45" },
-    interval: { per400m: "1:34", per800m: "3:10", per1200m: "4:47" },
-    repetition: { per200m: "0:45", per300m: "1:08", per400m: "1:31" },
-  },
-  64: {
-    easyRecovery: "7:45-8:15",
-    easyAerobic: "7:15-7:45",
-    marathon: "7:15",
-    tempo: { per400m: "1:46", perKm: "4:25", perMile: "7:00" },
-    interval: { per400m: "1:38", per800m: "3:18", per1200m: "4:59" },
-    repetition: { per200m: "0:47", per300m: "1:11", per400m: "1:35" },
-  },
-  61: {
-    easyRecovery: "8:00-8:30",
-    easyAerobic: "7:30-8:00",
-    marathon: "7:30",
-    tempo: { per400m: "1:50", perKm: "4:35", perMile: "7:15" },
-    interval: { per400m: "1:42", per800m: "3:26", per1200m: "5:11" },
-    repetition: { per200m: "0:49", per300m: "1:14", per400m: "1:39" },
-  },
-  55: {
-    easyRecovery: "8:30-9:00",
-    easyAerobic: "8:00-8:30",
-    marathon: "8:00",
-    tempo: { per400m: "2:00", perKm: "5:00", perMile: "8:00" },
-    interval: { per400m: "1:52", per800m: "3:46", per1200m: "5:41" },
-    repetition: { per200m: "0:54", per300m: "1:22", per400m: "1:50" },
-  },
-  50: {
-    easyRecovery: "9:00-9:30",
-    easyAerobic: "8:30-9:00",
-    marathon: "8:30",
-    tempo: { per400m: "2:10", perKm: "5:25", perMile: "8:45" },
-    interval: { per400m: "2:02", per800m: "4:06", per1200m: "6:11" },
-    repetition: { per200m: "0:59", per300m: "1:30", per400m: "2:01" },
-  },
-  46: {
-    easyRecovery: "9:30-10:00",
-    easyAerobic: "9:00-9:30",
-    marathon: "9:00",
-    tempo: { per400m: "2:20", perKm: "5:50", perMile: "9:30" },
-    interval: { per400m: "2:12", per800m: "4:26", per1200m: "6:41" },
-    repetition: { per200m: "1:04", per300m: "1:38", per400m: "2:12" },
-  },
-  42: {
-    easyRecovery: "10:00-10:30",
-    easyAerobic: "9:30-10:00",
-    marathon: "9:30",
-    tempo: { per400m: "2:30", perKm: "6:15", perMile: "10:15" },
-    interval: { per400m: "2:22", per800m: "4:46", per1200m: "7:11" },
-    repetition: { per200m: "1:09", per300m: "1:46", per400m: "2:23" },
-  },
-  39: {
-    easyRecovery: "10:30-11:00",
-    easyAerobic: "10:00-10:30",
-    marathon: "10:00",
-    tempo: { per400m: "2:40", perKm: "6:40", perMile: "11:00" },
-    interval: { per400m: "2:32", per800m: "5:06", per1200m: "7:41" },
-    repetition: { per200m: "1:14", per300m: "1:54", per400m: "2:34" },
-  },
-  36: {
-    easyRecovery: "11:00-11:30",
-    easyAerobic: "10:30-11:00",
-    marathon: "10:30",
-    tempo: { per400m: "2:50", perKm: "7:05", perMile: "11:45" },
-    interval: { per400m: "2:42", per800m: "5:26", per1200m: "8:11" },
-    repetition: { per200m: "1:19", per300m: "2:02", per400m: "2:45" },
-  },
-};
+// const convertDistance = (value: number, from: string, to: string): number => {
+//   if (from === to) return value;
+//   const conversions: Record<string, Record<string, number>> = {
+//     km: { miles: 0.621371 },
+//     miles: { km: 1.609344 },
+//     meters: { feet: 3.28084 },
+//     feet: { meters: 0.3048 },
+//   };
+//   return value * (conversions[from]?.[to] || 1);
+// };
 
-const PLAN_STRUCTURES: Record<string, PhaseStructure[]> = {
-  foundation: [
-    {
-      phaseNumber: 1,
-      duration: 6,
-      focus: "Base Building",
-      description: "Establish aerobic foundation with easy running",
-      targetMileage: 15,
-      qualitySessions: 0,
-    },
-    {
-      phaseNumber: 2,
-      duration: 5,
-      focus: "Introduce Strides",
-      description: "Add basic speed elements",
-      targetMileage: 18,
-      qualitySessions: 1,
-    },
-    {
-      phaseNumber: 3,
-      duration: 5,
-      focus: "Basic Tempo",
-      description: "Develop lactate threshold",
-      targetMileage: 20,
-      qualitySessions: 1,
-    },
-    {
-      phaseNumber: 4,
-      duration: 4,
-      focus: "Light Intervals",
-      description: "Peak preparation with speed work",
-      targetMileage: 22,
-      qualitySessions: 1,
-    },
-  ],
-  intermediate: [
-    {
-      phaseNumber: 1,
-      duration: 6,
-      focus: "Base Building",
-      description: "Establish aerobic foundation",
-      targetMileage: 25,
-      qualitySessions: 1,
-    },
-    {
-      phaseNumber: 2,
-      duration: 5,
-      focus: "Tempo Introduction",
-      description: "Add sustained threshold work",
-      targetMileage: 28,
-      qualitySessions: 1,
-    },
-    {
-      phaseNumber: 3,
-      duration: 5,
-      focus: "Full Integration",
-      description: "Include all intensity types",
-      targetMileage: 32,
-      qualitySessions: 2,
-    },
-    {
-      phaseNumber: 4,
-      duration: 4,
-      focus: "Peak Preparation",
-      description: "Race-specific training",
-      targetMileage: 35,
-      qualitySessions: 2,
-    },
-  ],
-  advanced: [
-    {
-      phaseNumber: 1,
-      duration: 6,
-      focus: "Base Building",
-      description: "High-volume aerobic development",
-      targetMileage: 40,
-      qualitySessions: 1,
-    },
-    {
-      phaseNumber: 2,
-      duration: 5,
-      focus: "Tempo Development",
-      description: "Structured threshold training",
-      targetMileage: 45,
-      qualitySessions: 2,
-    },
-    {
-      phaseNumber: 3,
-      duration: 5,
-      focus: "Full Integration",
-      description: "Complete intensity spectrum",
-      targetMileage: 50,
-      qualitySessions: 3,
-    },
-    {
-      phaseNumber: 4,
-      duration: 4,
-      focus: "Peak & Taper",
-      description: "Race preparation and recovery",
-      targetMileage: 52,
-      qualitySessions: 3,
-    },
-  ],
-  elite: [
-    {
-      phaseNumber: 1,
-      duration: 6,
-      focus: "Base Building",
-      description: "Maximum aerobic development",
-      targetMileage: 60,
-      qualitySessions: 2,
-    },
-    {
-      phaseNumber: 2,
-      duration: 5,
-      focus: "Tempo Development",
-      description: "Advanced threshold training",
-      targetMileage: 70,
-      qualitySessions: 3,
-    },
-    {
-      phaseNumber: 3,
-      duration: 5,
-      focus: "Full Integration",
-      description: "Sophisticated workout structure",
-      targetMileage: 75,
-      qualitySessions: 3,
-    },
-    {
-      phaseNumber: 4,
-      duration: 4,
-      focus: "Peak & Taper",
-      description: "Elite race preparation",
-      targetMileage: 80,
-      qualitySessions: 3,
-    },
-  ],
-};
+// const convertPace = (
+//   pace: string,
+//   fromUnit: string,
+//   toUnit: string
+// ): string => {
+//   if (fromUnit === toUnit) return pace;
 
-// Utility functions
-const calculateFitnessScore = (race: RaceTime): number => {
-  const distanceTable = RACE_TO_FITNESS_TABLE[race.distance];
-  if (!distanceTable) return 50;
+//   const [minutes, seconds] = pace.split(":").map(Number);
+//   const totalSeconds = minutes * 60 + seconds;
 
-  const exactMatch = distanceTable[race.time];
-  if (exactMatch) return exactMatch;
+//   const factor = fromUnit === "min/km" ? 1.609344 : 0.621371;
+//   const convertedSeconds = Math.round(totalSeconds * factor);
 
-  // Find closest time for interpolation
-  const times = Object.keys(distanceTable).sort();
-  const timeToSeconds = (time: string): number => {
-    const parts = time.split(":");
-    return parts.length === 2
-      ? parseInt(parts[0]) * 60 + parseInt(parts[1])
-      : parseInt(parts[0]) * 3600 +
-          parseInt(parts[1]) * 60 +
-          parseInt(parts[2]);
+//   const newMinutes = Math.floor(convertedSeconds / 60);
+//   const newSecs = convertedSeconds % 60;
+
+//   return `${newMinutes}:${newSecs.toString().padStart(2, "0")}`;
+// };
+
+// Reusable Components
+const Card: React.FC<{
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+  hover?: boolean;
+}> = ({ children, className = "", onClick, hover = false }) => (
+  <div
+    className={`bg-white rounded-lg border shadow-sm transition-all duration-200 ${
+      hover ? "hover:shadow-md hover:scale-105" : ""
+    } ${onClick ? "cursor-pointer" : ""} ${className}`}
+    onClick={onClick}
+  >
+    {children}
+  </div>
+);
+
+const CardHeader: React.FC<{
+  children: React.ReactNode;
+  className?: string;
+}> = ({ children, className = "" }) => (
+  <div className={`px-6 py-4 border-b ${className}`}>{children}</div>
+);
+
+const CardContent: React.FC<{
+  children: React.ReactNode;
+  className?: string;
+}> = ({ children, className = "" }) => (
+  <div className={`px-6 py-4 ${className}`}>{children}</div>
+);
+
+const CardTitle: React.FC<{
+  children: React.ReactNode;
+  className?: string;
+}> = ({ children, className = "" }) => (
+  <h3 className={`text-lg font-semibold ${className}`}>{children}</h3>
+);
+
+const Button: React.FC<{
+  children: React.ReactNode;
+  onClick?: () => void;
+  className?: string;
+  variant?: "default" | "outline" | "secondary";
+  size?: "sm" | "default" | "lg";
+  disabled?: boolean;
+}> = ({
+  children,
+  onClick,
+  className = "",
+  variant = "default",
+  size = "default",
+  disabled = false,
+}) => {
+  const baseClasses =
+    "inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
+
+  const variantClasses = {
+    default: "bg-blue-600 text-white hover:bg-blue-700",
+    outline: "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
+    secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200",
   };
 
-  const raceSeconds = timeToSeconds(race.time);
-  let closestTime = times[0];
-  let minDiff = Math.abs(timeToSeconds(times[0]) - raceSeconds);
-
-  for (const time of times) {
-    const diff = Math.abs(timeToSeconds(time) - raceSeconds);
-    if (diff < minDiff) {
-      minDiff = diff;
-      closestTime = time;
-    }
-  }
-
-  return distanceTable[closestTime];
-};
-
-const applyAltitudeAdjustment = (
-  paces: TrainingPaces,
-  altitude: number
-): TrainingPaces => {
-  if (altitude < 3000) return paces;
-
-  // Apply 4-second adjustment for 7000ft baseline
-  const adjustTime = (timeStr: string, adjustment: number): string => {
-    const [min, sec] = timeStr.split(":").map(Number);
-    const totalSeconds = min * 60 + sec + adjustment;
-    const newMin = Math.floor(totalSeconds / 60);
-    const newSec = totalSeconds % 60;
-    return `${newMin}:${newSec.toString().padStart(2, "0")}`;
-  };
-
-  const adjustRange = (range: string, adjustment: number): string => {
-    const [start, end] = range.split("-");
-    return `${adjustTime(start, adjustment)}-${adjustTime(end, adjustment)}`;
-  };
-
-  return {
-    ...paces,
-    easyRecovery: adjustRange(paces.easyRecovery, 4),
-    easyAerobic: adjustRange(paces.easyAerobic, 4),
-    marathon: adjustTime(paces.marathon, 4),
-    tempo: {
-      per400m: adjustTime(paces.tempo.per400m, 4),
-      perKm: adjustTime(paces.tempo.perKm, 10),
-      perMile: adjustTime(paces.tempo.perMile, 16),
-    },
-    interval: {
-      per400m: adjustTime(paces.interval.per400m, 4),
-      per800m: adjustTime(paces.interval.per800m, 8),
-      per1200m: adjustTime(paces.interval.per1200m, 12),
-    },
-  };
-};
-
-const generatePDF = (plan: TrainingPlan, profile: UserProfile): string => {
-  const content = `
-Jack Daniels Running Plan
-Generated: ${plan.metadata.generatedDate}
-Plan Level: ${plan.metadata.planLevel}
-Fitness Score: ${plan.metadata.fitnessScore}
-
-TRAINING PACES:
-Easy Recovery: ${plan.paces.easyRecovery}
-Easy Aerobic: ${plan.paces.easyAerobic}
-Marathon: ${plan.paces.marathon}
-Tempo: ${plan.paces.tempo.perMile}/mile
-Interval: ${plan.paces.interval.per400m}/400m
-Repetition: ${plan.paces.repetition.per400m}/400m
-
-PLAN STRUCTURE:
-${plan.phases
-  .map(
-    (phase) => `
-Phase ${phase.phaseNumber}: ${phase.focus} (${phase.duration} weeks)
-${phase.description}
-Target Weekly Mileage: ${phase.targetMileage} miles
-Quality Sessions: ${phase.qualitySessions}/week
-`
-  )
-  .join("")}
-
-NOTES:
-- Follow the 10% rule for mileage increases
-- Take rest days seriously
-- Adjust paces based on conditions
-- Listen to your body
-${
-  plan.altitudeAdjusted
-    ? `- Paces adjusted for ${profile.altitude}ft altitude`
-    : ""
-}
-  `.trim();
-
-  return `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`;
-};
-
-// Main component
-const RunningPlanGenerator: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState(0);
-  const [profile, setProfile] = useState<UserProfile>({
-    experienceLevel: "",
-    weeklyMileage: 0,
-    planLevel: "",
-    trainingDays: [false, false, false, false, false, false, false],
-    sessionDuration: 30,
-    goalRace: "",
-    altitude: 0,
-    fitnessScore: 50,
-  });
-  const [plan, setPlan] = useState<TrainingPlan | null>(null);
-  const [errors, setErrors] = useState<string[]>([]);
-
-  const screens = [
-    "Landing",
-    "Fitness Assessment",
-    "Training Constraints",
-    "Plan Generation",
-    "Export & Download",
-  ];
-
-  const experienceLevels = [
-    {
-      value: "beginner",
-      label: "Beginner/Returning",
-      mileage: "0-10 mpw",
-      plan: "foundation",
-    },
-    {
-      value: "recreational",
-      label: "Recreational",
-      mileage: "10-25 mpw",
-      plan: "intermediate",
-    },
-    {
-      value: "serious",
-      label: "Serious",
-      mileage: "25-50 mpw",
-      plan: "advanced",
-    },
-    {
-      value: "competitive",
-      label: "Competitive",
-      mileage: "50+ mpw",
-      plan: "elite",
-    },
-  ];
-
-  const raceDistances = [
-    { value: "1500m", label: "1500m" },
-    { value: "mile", label: "Mile" },
-    { value: "5k", label: "5K" },
-    { value: "10k", label: "10K" },
-    { value: "half", label: "Half Marathon" },
-    { value: "marathon", label: "Marathon" },
-  ];
-
-  const goalRaces = [
-    { value: "5k", label: "5K" },
-    { value: "10k", label: "10K" },
-    { value: "half", label: "Half Marathon" },
-    { value: "marathon", label: "Marathon" },
-  ];
-
-  const validateStep = (step: number): boolean => {
-    const newErrors: string[] = [];
-
-    switch (step) {
-      case 1:
-        if (!profile.experienceLevel)
-          newErrors.push("Please select your experience level");
-        if (profile.weeklyMileage <= 0)
-          newErrors.push("Please enter your current weekly mileage");
-        break;
-      case 2:
-        if (profile.trainingDays.filter(Boolean).length < 3) {
-          newErrors.push("Please select at least 3 training days");
-        }
-        if (!profile.goalRace)
-          newErrors.push("Please select your goal race distance");
-        break;
-      default:
-        break;
-    }
-
-    setErrors(newErrors);
-    return newErrors.length === 0;
-  };
-
-  const handleNext = () => {
-    if (validateStep(currentScreen)) {
-      if (currentScreen === 2) {
-        generatePlan();
-      }
-      setCurrentScreen((prev) => Math.min(prev + 1, screens.length - 1));
-    }
-  };
-
-  const handleBack = () => {
-    setCurrentScreen((prev) => Math.max(prev - 1, 0));
-  };
-
-  const generatePlan = () => {
-    const fitnessScore = profile.recentRace
-      ? calculateFitnessScore(profile.recentRace)
-      : 50;
-    const basePaces =
-      FITNESS_TO_PACES_TABLE[fitnessScore] || FITNESS_TO_PACES_TABLE[50];
-    const adjustedPaces = applyAltitudeAdjustment(basePaces, profile.altitude);
-
-    const newPlan: TrainingPlan = {
-      metadata: {
-        planLevel: profile.planLevel,
-        fitnessScore,
-        generatedDate: new Date().toISOString().split("T")[0],
-      },
-      paces: adjustedPaces,
-      phases: PLAN_STRUCTURES[profile.planLevel] || PLAN_STRUCTURES.foundation,
-      altitudeAdjusted: profile.altitude >= 3000,
-    };
-
-    setPlan(newPlan);
-  };
-
-  const handleDownload = () => {
-    if (!plan) return;
-
-    const pdfContent = generatePDF(plan, profile);
-    const link = document.createElement("a");
-    link.href = pdfContent;
-    link.download = `running-plan-${plan.metadata.planLevel}-${plan.metadata.generatedDate}.txt`;
-    link.click();
-  };
-
-  const renderLandingScreen = () => (
-    <div className="max-w-4xl mx-auto text-center space-y-8">
-      <div className="space-y-4">
-        <h1 className="text-4xl font-bold text-gray-900">
-          Jack Daniels Running Plan Generator
-        </h1>
-        <p className="text-xl text-gray-600">
-          Generate personalised training plans based on scientifically proven
-          methodology
-        </p>
-      </div>
-
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {experienceLevels.map((level) => (
-          <div
-            key={level.value}
-            className="bg-white p-6 rounded-lg shadow-lg border"
-          >
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {level.label}
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">{level.mileage}</p>
-            <div className="text-sm text-blue-600 font-medium">
-              {level.plan} Plan
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-blue-50 p-6 rounded-lg">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Scientific Approach
-        </h2>
-        <div className="grid md:grid-cols-3 gap-4 text-sm">
-          <div>
-            <div className="font-medium text-gray-900">Research-Based</div>
-            <div className="text-gray-600">Proven training methodology</div>
-          </div>
-          <div>
-            <div className="font-medium text-gray-900">Personalised Paces</div>
-            <div className="text-gray-600">Calculated from your fitness</div>
-          </div>
-          <div>
-            <div className="font-medium text-gray-900">
-              Structured Progression
-            </div>
-            <div className="text-gray-600">20-week periodised plan</div>
-          </div>
-        </div>
-      </div>
-
-      <button
-        onClick={handleNext}
-        className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
-      >
-        Start Assessment
-        <ChevronRight className="w-5 h-5" />
-      </button>
-    </div>
-  );
-
-  const renderFitnessAssessment = () => (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <div className="text-center space-y-4">
-        <h2 className="text-3xl font-bold text-gray-900">Fitness Assessment</h2>
-        <p className="text-gray-600">
-          Help us understand your current running fitness
-        </p>
-      </div>
-
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Experience Level
-          </label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {experienceLevels.map((level) => (
-              <button
-                key={level.value}
-                onClick={() =>
-                  setProfile((prev) => ({
-                    ...prev,
-                    experienceLevel: level.value,
-                    planLevel: level.plan,
-                  }))
-                }
-                className={`p-4 rounded-lg border text-left transition-colors ${
-                  profile.experienceLevel === level.value
-                    ? "bg-blue-50 border-blue-200"
-                    : "bg-white border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <div className="font-semibold text-gray-900">{level.label}</div>
-                <div className="text-sm text-gray-600">{level.mileage}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Current Weekly Mileage
-          </label>
-          <input
-            type="number"
-            value={profile.weeklyMileage || ""}
-            onChange={(e) =>
-              setProfile((prev) => ({
-                ...prev,
-                weeklyMileage: parseInt(e.target.value) || 0,
-              }))
-            }
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter miles per week"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Recent Race Performance (Optional)
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <select
-              value={profile.recentRace?.distance || ""}
-              onChange={(e) =>
-                setProfile((prev) => ({
-                  ...prev,
-                  recentRace: e.target.value
-                    ? {
-                        distance: e.target.value,
-                        time: prev.recentRace?.time || "",
-                      }
-                    : undefined,
-                }))
-              }
-              className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select distance</option>
-              {raceDistances.map((distance) => (
-                <option key={distance.value} value={distance.value}>
-                  {distance.label}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              placeholder="MM:SS or H:MM:SS"
-              value={profile.recentRace?.time || ""}
-              onChange={(e) =>
-                setProfile((prev) => ({
-                  ...prev,
-                  recentRace: prev.recentRace
-                    ? {
-                        ...prev.recentRace,
-                        time: e.target.value,
-                      }
-                    : undefined,
-                }))
-              }
-              className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              disabled={!profile.recentRace?.distance}
-            />
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Race times help calculate more accurate training paces
-          </p>
-        </div>
-
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <Target className="w-5 h-5 text-blue-600" />
-            <span className="font-medium text-gray-900">
-              Recommended Plan Level
-            </span>
-          </div>
-          <div className="text-sm text-gray-700">
-            Based on your inputs:{" "}
-            <span className="font-semibold capitalize">
-              {profile.planLevel}
-            </span>
-          </div>
-          {profile.experienceLevel && (
-            <div className="text-xs text-gray-600 mt-1">
-              You can override this recommendation in the next step if needed
-            </div>
-          )}
-        </div>
-      </div>
-
-      {errors.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="text-sm text-red-600">
-            {errors.map((error, idx) => (
-              <div key={idx}>• {error}</div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderTrainingConstraints = () => (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <div className="text-center space-y-4">
-        <h2 className="text-3xl font-bold text-gray-900">
-          Training Constraints
-        </h2>
-        <p className="text-gray-600">Configure your schedule and goals</p>
-      </div>
-
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Available Training Days
-          </label>
-          <div className="grid grid-cols-7 gap-2">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-              (day, idx) => (
-                <button
-                  key={day}
-                  onClick={() =>
-                    setProfile((prev) => ({
-                      ...prev,
-                      trainingDays: prev.trainingDays.map((selected, i) =>
-                        i === idx ? !selected : selected
-                      ),
-                    }))
-                  }
-                  className={`p-3 rounded-lg text-sm font-medium transition-colors ${
-                    profile.trainingDays[idx]
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {day}
-                </button>
-              )
-            )}
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Select at least 3 days. Rest days are important for recovery.
-          </p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Typical Session Duration: {profile.sessionDuration} minutes
-          </label>
-          <input
-            type="range"
-            min="20"
-            max="120"
-            step="10"
-            value={profile.sessionDuration}
-            onChange={(e) =>
-              setProfile((prev) => ({
-                ...prev,
-                sessionDuration: parseInt(e.target.value),
-              }))
-            }
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>20 min</span>
-            <span>120 min</span>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Goal Race Distance
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            {goalRaces.map((race) => (
-              <button
-                key={race.value}
-                onClick={() =>
-                  setProfile((prev) => ({ ...prev, goalRace: race.value }))
-                }
-                className={`p-4 rounded-lg border text-center transition-colors ${
-                  profile.goalRace === race.value
-                    ? "bg-blue-50 border-blue-200"
-                    : "bg-white border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <div className="font-semibold text-gray-900">{race.label}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Training Altitude (Optional)
-          </label>
-          <div className="flex items-center gap-4">
-            <input
-              type="number"
-              value={profile.altitude || ""}
-              onChange={(e) =>
-                setProfile((prev) => ({
-                  ...prev,
-                  altitude: parseInt(e.target.value) || 0,
-                }))
-              }
-              className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="Feet above sea level"
-            />
-            <MapPin className="w-5 h-5 text-gray-400" />
-          </div>
-          {profile.altitude >= 3000 && (
-            <div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-              <p className="text-sm text-orange-700">
-                <span className="font-medium">
-                  Altitude adjustment will be applied.
-                </span>
-                Training paces will be slowed for altitude above 3,000 feet.
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-5 h-5 text-gray-600" />
-            <span className="font-medium text-gray-900">Plan Summary</span>
-          </div>
-          <div className="text-sm space-y-1">
-            <div>
-              Training days: {profile.trainingDays.filter(Boolean).length}/week
-            </div>
-            <div>Session duration: {profile.sessionDuration} minutes</div>
-            <div>
-              Goal:{" "}
-              {goalRaces.find((r) => r.value === profile.goalRace)?.label ||
-                "Not selected"}
-            </div>
-            <div>
-              Plan level:{" "}
-              <span className="capitalize">{profile.planLevel}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {errors.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="text-sm text-red-600">
-            {errors.map((error, idx) => (
-              <div key={idx}>• {error}</div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderPlanGeneration = () => {
-    if (!plan) return null;
-
-    return (
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div className="text-center space-y-4">
-          <h2 className="text-3xl font-bold text-gray-900">
-            Your Training Plan
-          </h2>
-          <p className="text-gray-600">
-            {plan.metadata.planLevel} level plan • Fitness Score:{" "}
-            {plan.metadata.fitnessScore}
-            {plan.altitudeAdjusted && " • Altitude adjusted"}
-          </p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Clock className="w-5 h-5" />
-            Training Paces
-          </h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="font-medium text-gray-900">Easy Recovery</div>
-              <div className="text-lg font-bold text-green-600">
-                {plan.paces.easyRecovery}
-              </div>
-              <div className="text-xs text-gray-600">Post-workout recovery</div>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="font-medium text-gray-900">Easy Aerobic</div>
-              <div className="text-lg font-bold text-green-600">
-                {plan.paces.easyAerobic}
-              </div>
-              <div className="text-xs text-gray-600">
-                General fitness building
-              </div>
-            </div>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="font-medium text-gray-900">Marathon</div>
-              <div className="text-lg font-bold text-blue-600">
-                {plan.paces.marathon}
-              </div>
-              <div className="text-xs text-gray-600">
-                Comfortably hard effort
-              </div>
-            </div>
-            <div className="bg-orange-50 p-4 rounded-lg">
-              <div className="font-medium text-gray-900">Tempo</div>
-              <div className="text-lg font-bold text-orange-600">
-                {plan.paces.tempo.perMile}
-              </div>
-              <div className="text-xs text-gray-600">Lactate threshold</div>
-            </div>
-            <div className="bg-red-50 p-4 rounded-lg">
-              <div className="font-medium text-gray-900">Interval</div>
-              <div className="text-lg font-bold text-red-600">
-                {plan.paces.interval.per400m}/400m
-              </div>
-              <div className="text-xs text-gray-600">VO2max development</div>
-            </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <div className="font-medium text-gray-900">Repetition</div>
-              <div className="text-lg font-bold text-purple-600">
-                {plan.paces.repetition.per400m}/400m
-              </div>
-              <div className="text-xs text-gray-600">Speed & economy</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Activity className="w-5 h-5" />
-            20-Week Plan Structure
-          </h3>
-          <div className="space-y-4">
-            {plan.phases.map((phase) => (
-              <div
-                key={phase.phaseNumber}
-                className="border border-gray-200 rounded-lg p-4"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="font-semibold text-gray-900">
-                      Phase {phase.phaseNumber}: {phase.focus}
-                    </h4>
-                    <p className="text-sm text-gray-600">{phase.description}</p>
-                  </div>
-                  <span className="text-sm font-medium text-blue-600">
-                    {phase.duration} weeks
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">
-                      Target Weekly Mileage:
-                    </span>
-                    <span className="ml-2 font-medium">
-                      {phase.targetMileage} miles
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Quality Sessions:</span>
-                    <span className="ml-2 font-medium">
-                      {phase.qualitySessions}/week
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-blue-50 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Important Guidelines
-          </h3>
-          <div className="text-sm text-gray-700 space-y-1">
-            <div>
-              • Follow the 10% rule: increase weekly mileage by no more than 10%
-            </div>
-            <div>
-              • Take rest days seriously - they're crucial for adaptation
-            </div>
-            <div>
-              • Adjust paces based on weather, terrain, and how you feel
-            </div>
-            <div>
-              • If you miss workouts, don't try to catch up - continue with the
-              plan
-            </div>
-            {plan.altitudeAdjusted && (
-              <div>
-                • Paces have been adjusted for your training altitude of{" "}
-                {profile.altitude} feet
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderExportScreen = () => (
-    <div className="max-w-2xl mx-auto space-y-8 text-center">
-      <div className="space-y-4">
-        <h2 className="text-3xl font-bold text-gray-900">Export Your Plan</h2>
-        <p className="text-gray-600">
-          Download your personalised training plan
-        </p>
-      </div>
-
-      {plan && (
-        <div className="bg-white rounded-lg shadow-lg p-6 text-left">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Plan Summary
-          </h3>
-          <div className="space-y-2 text-sm">
-            <div>
-              <span className="text-gray-600">Plan Level:</span>{" "}
-              <span className="font-medium capitalize">
-                {plan.metadata.planLevel}
-              </span>
-            </div>
-            <div>
-              <span className="text-gray-600">Fitness Score:</span>{" "}
-              <span className="font-medium">{plan.metadata.fitnessScore}</span>
-            </div>
-            <div>
-              <span className="text-gray-600">Goal Race:</span>{" "}
-              <span className="font-medium">
-                {goalRaces.find((r) => r.value === profile.goalRace)?.label}
-              </span>
-            </div>
-            <div>
-              <span className="text-gray-600">Training Days:</span>{" "}
-              <span className="font-medium">
-                {profile.trainingDays.filter(Boolean).length}/week
-              </span>
-            </div>
-            <div>
-              <span className="text-gray-600">Generated:</span>{" "}
-              <span className="font-medium">{plan.metadata.generatedDate}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-4">
-        <button
-          onClick={handleDownload}
-          className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
-        >
-          <Download className="w-5 h-5" />
-          Download Plan (Text)
-        </button>
-
-        <div className="text-sm text-gray-600">
-          <p>Your plan includes:</p>
-          <ul className="mt-2 space-y-1 text-left max-w-md mx-auto">
-            <li>• Complete pace tables for all training intensities</li>
-            <li>• 20-week structured progression plan</li>
-            <li>• Training guidelines and safety notes</li>
-            <li>• Phase-by-phase structure breakdown</li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="bg-green-50 p-6 rounded-lg text-left">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
-          <FileText className="w-5 h-5" />
-          Next Steps
-        </h3>
-        <div className="text-sm text-gray-700 space-y-2">
-          <p>Now that you have your plan:</p>
-          <div className="space-y-1 ml-4">
-            <div>
-              1. Review the pace guidelines and understand each intensity
-            </div>
-            <div>2. Start with Phase 1 and follow the progression</div>
-            <div>3. Track your progress and adapt as needed</div>
-            <div>4. Consider using a GPS watch or training app</div>
-            <div>5. Listen to your body and prioritise recovery</div>
-          </div>
-        </div>
-      </div>
-
-      <button
-        onClick={() => {
-          setCurrentScreen(0);
-          setProfile({
-            experienceLevel: "",
-            weeklyMileage: 0,
-            planLevel: "",
-            trainingDays: [false, false, false, false, false, false, false],
-            sessionDuration: 30,
-            goalRace: "",
-            altitude: 0,
-            fitnessScore: 50,
-          });
-          setPlan(null);
-          setErrors([]);
-        }}
-        className="text-blue-600 hover:text-blue-700 font-medium"
-      >
-        Generate Another Plan
-      </button>
-    </div>
-  );
-
-  const renderCurrentScreen = () => {
-    switch (currentScreen) {
-      case 0:
-        return renderLandingScreen();
-      case 1:
-        return renderFitnessAssessment();
-      case 2:
-        return renderTrainingConstraints();
-      case 3:
-        return renderPlanGeneration();
-      case 4:
-        return renderExportScreen();
-      default:
-        return renderLandingScreen();
-    }
+  const sizeClasses = {
+    sm: "px-3 py-1.5 text-sm",
+    default: "px-4 py-2",
+    lg: "px-6 py-3 text-lg",
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-gray-900">
-              Jack Daniels Running Plan Generator
-            </h1>
-            {currentScreen > 0 && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                Step {currentScreen} of {screens.length - 1}
-              </div>
-            )}
-          </div>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+    >
+      {children}
+    </button>
+  );
+};
 
-          {/* Progress bar */}
-          {currentScreen > 0 && (
-            <div className="mt-4">
-              <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                {screens.slice(1).map((screen, idx) => (
-                  <React.Fragment key={screen}>
-                    <span
-                      className={
-                        currentScreen === idx + 1
-                          ? "text-blue-600 font-medium"
-                          : ""
-                      }
-                    >
-                      {screen}
-                    </span>
-                    {idx < screens.length - 2 && <span>•</span>}
-                  </React.Fragment>
-                ))}
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{
-                    width: `${(currentScreen / (screens.length - 1)) * 100}%`,
-                  }}
-                />
-              </div>
+// Landing Screen Component
+const LandingScreen: React.FC<{ onStartAssessment: () => void }> = ({
+  onStartAssessment,
+}) => {
+  const [selectedView, setSelectedView] = useState<"metric" | "imperial">(
+    "metric"
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Hero Section */}
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center max-w-4xl mx-auto mb-16">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            Jack Daniels Training Plan Generator
+          </h1>
+          <p className="text-xl md:text-2xl text-gray-600 mb-8">
+            Scientific, personalised running plans based on proven methodology
+          </p>
+
+          {/* Credibility Indicators */}
+          <div className="flex flex-wrap justify-center gap-6 mb-12">
+            <div className="flex items-center space-x-2 text-gray-700">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              <span className="text-sm font-medium">
+                Research-Based VDOT System
+              </span>
             </div>
-          )}
+            <div className="flex items-center space-x-2 text-gray-700">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              <span className="text-sm font-medium">
+                Proven Olympic Coach Methods
+              </span>
+            </div>
+            <div className="flex items-center space-x-2 text-gray-700">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              <span className="text-sm font-medium">
+                20-Week Structured Programs
+              </span>
+            </div>
+          </div>
+
+          {/* Unit Toggle for Examples */}
+          <div className="flex justify-center mb-8">
+            <div className="bg-white rounded-lg p-1 border shadow-sm">
+              <button
+                onClick={() => setSelectedView("metric")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  selectedView === "metric"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Metric Examples
+              </button>
+              <button
+                onClick={() => setSelectedView("imperial")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  selectedView === "imperial"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Imperial Examples
+              </button>
+            </div>
+          </div>
+
+          <Button
+            onClick={onStartAssessment}
+            size="lg"
+            className="text-xl px-8 py-4"
+          >
+            Start Assessment
+            <ArrowRight className="w-6 h-6 ml-2" />
+          </Button>
         </div>
-      </header>
 
-      {/* Main content */}
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        {renderCurrentScreen()}
-      </main>
+        {/* Plan Level Overview Cards */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+          {PLAN_LEVELS.map((plan) => {
+            const IconComponent = plan.icon;
+            return (
+              <Card key={plan.id} hover className="h-full">
+                <CardHeader className={`${plan.color} text-white`}>
+                  <div className="flex items-center space-x-3">
+                    <IconComponent className="w-6 h-6" />
+                    <div>
+                      <CardTitle className="text-white text-base">
+                        {plan.name}
+                      </CardTitle>
+                      <div className="text-sm opacity-90">{plan.subtitle}</div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1 space-y-4">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 mb-1">
+                      Weekly Volume
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {plan.weeklyMileage[selectedView]}
+                    </div>
+                  </div>
 
-      {/* Navigation */}
-      {currentScreen > 0 && currentScreen < screens.length - 1 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
-          <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between">
-            <button
-              onClick={handleBack}
-              className="flex items-center gap-2 px-6 py-2 text-gray-600 hover:text-gray-800 font-medium"
-              disabled={currentScreen === 0}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Back
-            </button>
-            <button
-              onClick={handleNext}
-              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            >
-              {currentScreen === 2 ? "Generate Plan" : "Continue"}
-              <ChevronRight className="w-4 h-4" />
-            </button>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 mb-1">
+                      Focus
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {plan.description}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 mb-1">
+                      Quality Sessions
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {plan.qualitySessions}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 mb-1">
+                      Best For
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {plan.suitableFor}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Methodology Overview */}
+        <div className="bg-white rounded-lg shadow-sm border p-8 max-w-4xl mx-auto">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+            Scientific Training Approach
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Target className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                Precision Paces
+              </h3>
+              <p className="text-sm text-gray-600">
+                Training paces calculated from your current fitness using
+                research-validated VDOT tables
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Zap className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                Progressive Loading
+              </h3>
+              <p className="text-sm text-gray-600">
+                Systematic 20-week progression through base building, tempo,
+                intervals, and race preparation
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trophy className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                Goal-Specific
+              </h3>
+              <p className="text-sm text-gray-600">
+                Plans adapted for 5K to marathon distances with appropriate
+                training emphasis
+              </p>
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
+};
+
+// Unit Preferences Screen Component
+const UnitPreferenceScreen: React.FC<{
+  preferences: UnitPreferences;
+  onUpdate: (prefs: UnitPreferences) => void;
+  onNext: () => void;
+  onBack: () => void;
+}> = ({ preferences, onUpdate, onNext, onBack }) => {
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Auto-detect regional default on component mount
+  useEffect(() => {
+    const detectedSystem = detectRegionalUnits();
+    if (preferences.system !== detectedSystem) {
+      handleSystemChange(detectedSystem);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSystemChange = (system: "metric" | "imperial") => {
+    const newPrefs: UnitPreferences = {
+      system,
+      distance: system === "metric" ? "km" : "miles",
+      pace: system === "metric" ? "min/km" : "min/mile",
+      altitude: system === "metric" ? "meters" : "feet",
+    };
+    onUpdate(newPrefs);
+  };
+
+  const handleCustomUnitChange = (
+    type: keyof UnitPreferences,
+    value: string
+  ) => {
+    onUpdate({
+      ...preferences,
+      [type]: value,
+    });
+  };
+
+  // Preview examples based on current preferences
+  const getPreviewExamples = () => {
+    const isMetric = preferences.system === "metric";
+
+    return {
+      trainingPace: isMetric ? "5:30/km" : "8:50/mile",
+      longRun: isMetric ? "15.0 km" : "9.3 miles",
+      intervalPace: isMetric ? "4:15/km" : "6:50/mile",
+      elevation: isMetric ? "500 meters" : "1,640 feet",
+      weeklyVolume: isMetric ? "45.0 km/week" : "28.0 miles/week",
+    };
+  };
+
+  const examples = getPreviewExamples();
+  const detectedRegion = detectRegionalUnits();
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-2xl mx-auto px-4 space-y-6">
+        <div className="text-center space-y-4">
+          <Globe className="w-12 h-12 mx-auto text-blue-600" />
+          <h2 className="text-2xl font-bold">Choose Your Unit System</h2>
+          <p className="text-gray-600">
+            Select your preferred measurement system for training plans
+          </p>
+
+          {/* Regional Detection Indicator */}
+          <div className="text-sm text-gray-500">
+            Auto-detected: {detectedRegion === "metric" ? "Metric" : "Imperial"}{" "}
+            system based on your location
+          </div>
+        </div>
+
+        {/* Primary Unit System Selection */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card
+            className={`cursor-pointer transition-all ${
+              preferences.system === "metric"
+                ? "ring-2 ring-blue-500 bg-blue-50"
+                : "hover:shadow-md"
+            }`}
+            onClick={() => handleSystemChange("metric")}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Metric System
+                {preferences.system === "metric" && (
+                  <div className="w-4 h-4 bg-blue-500 rounded-full" />
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-sm text-gray-600 space-y-1">
+                <div>• Distances: kilometers (km)</div>
+                <div>• Pace: minutes per kilometer (min/km)</div>
+                <div>• Altitude: meters (m)</div>
+              </div>
+              <div className="bg-gray-100 p-3 rounded text-sm">
+                <strong>Example:</strong> 5:30/km pace, 10km run at 500m
+                altitude
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card
+            className={`cursor-pointer transition-all ${
+              preferences.system === "imperial"
+                ? "ring-2 ring-blue-500 bg-blue-50"
+                : "hover:shadow-md"
+            }`}
+            onClick={() => handleSystemChange("imperial")}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Imperial System
+                {preferences.system === "imperial" && (
+                  <div className="w-4 h-4 bg-blue-500 rounded-full" />
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-sm text-gray-600 space-y-1">
+                <div>• Distances: miles (mi)</div>
+                <div>• Pace: minutes per mile (min/mile)</div>
+                <div>• Altitude: feet (ft)</div>
+              </div>
+              <div className="bg-gray-100 p-3 rounded text-sm">
+                <strong>Example:</strong> 8:50/mile pace, 6.2mi run at 1,640ft
+                altitude
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Advanced Customization */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Advanced Options</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+              >
+                {showAdvanced ? "Hide" : "Customize"}
+              </Button>
+            </CardTitle>
+          </CardHeader>
+
+          {showAdvanced && (
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Distance Unit
+                  </label>
+                  <select
+                    value={preferences.distance}
+                    onChange={(e) =>
+                      handleCustomUnitChange("distance", e.target.value)
+                    }
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="km">Kilometers (km)</option>
+                    <option value="miles">Miles (mi)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Pace Unit
+                  </label>
+                  <select
+                    value={preferences.pace}
+                    onChange={(e) =>
+                      handleCustomUnitChange("pace", e.target.value)
+                    }
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="min/km">
+                      Minutes per Kilometer (min/km)
+                    </option>
+                    <option value="min/mile">
+                      Minutes per Mile (min/mile)
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Altitude Unit
+                  </label>
+                  <select
+                    value={preferences.altitude}
+                    onChange={(e) =>
+                      handleCustomUnitChange("altitude", e.target.value)
+                    }
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="meters">Meters (m)</option>
+                    <option value="feet">Feet (ft)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+                <strong>Note:</strong> Mixed units may cause confusion. We
+                recommend staying with standard {preferences.system} system
+                settings.
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* Live Preview */}
+        <Card className="bg-blue-50 border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-blue-900">Live Preview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-2 gap-4 text-sm">
+              <div className="space-y-2">
+                <div>
+                  <span className="font-medium">Training pace:</span>{" "}
+                  {examples.trainingPace}
+                </div>
+                <div>
+                  <span className="font-medium">Long run:</span>{" "}
+                  {examples.longRun}
+                </div>
+                <div>
+                  <span className="font-medium">Interval pace:</span>{" "}
+                  {examples.intervalPace}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <span className="font-medium">Elevation:</span>{" "}
+                  {examples.elevation}
+                </div>
+                <div>
+                  <span className="font-medium">Weekly volume:</span>{" "}
+                  {examples.weeklyVolume}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Format Validation */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Format Validation</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span>
+                  Pace format: mm:ss per {preferences.pace.split("/")[1]}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span>Distance precision: 0.1 {preferences.distance}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span>
+                  Altitude precision:{" "}
+                  {preferences.altitude === "meters" ? "10m" : "50ft"}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span>Unit consistency maintained throughout application</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Navigation */}
+        <div className="flex space-x-4">
+          <Button variant="outline" onClick={onBack} className="flex-1">
+            Back to Overview
+          </Button>
+          <Button onClick={onNext} className="flex-1">
+            Continue with{" "}
+            {preferences.system === "metric" ? "Metric" : "Imperial"} System
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Main App Component
+const RunningPlanGenerator: React.FC = () => {
+  const [currentScreen, setCurrentScreen] = useState<"landing" | "preferences">(
+    "landing"
+  );
+  const [unitPreferences, setUnitPreferences] = useState<UnitPreferences>({
+    system: "metric",
+    distance: "km",
+    pace: "min/km",
+    altitude: "meters",
+  });
+
+  // Initialize with detected regional preferences
+  useEffect(() => {
+    const detectedSystem = detectRegionalUnits();
+    setUnitPreferences({
+      system: detectedSystem,
+      distance: detectedSystem === "metric" ? "km" : "miles",
+      pace: detectedSystem === "metric" ? "min/km" : "min/mile",
+      altitude: detectedSystem === "metric" ? "meters" : "feet",
+    });
+  }, []);
+
+  const handleStartAssessment = () => {
+    setCurrentScreen("preferences");
+  };
+
+  const handleBackToLanding = () => {
+    setCurrentScreen("landing");
+  };
+
+  const handlePreferencesComplete = () => {
+    // Store preferences in session storage for persistence
+    try {
+      sessionStorage.setItem(
+        "unitPreferences",
+        JSON.stringify(unitPreferences)
+      );
+    } catch (error) {
+      console.warn("Failed to store preferences in session storage:", error);
+    }
+
+    // TODO: Navigate to next screen (Fitness Assessment)
+    console.log("Preferences saved:", unitPreferences);
+  };
+
+  const renderCurrentScreen = () => {
+    switch (currentScreen) {
+      case "landing":
+        return <LandingScreen onStartAssessment={handleStartAssessment} />;
+      case "preferences":
+        return (
+          <UnitPreferenceScreen
+            preferences={unitPreferences}
+            onUpdate={setUnitPreferences}
+            onNext={handlePreferencesComplete}
+            onBack={handleBackToLanding}
+          />
+        );
+      default:
+        return <LandingScreen onStartAssessment={handleStartAssessment} />;
+    }
+  };
+
+  return <div className="min-h-screen">{renderCurrentScreen()}</div>;
 };
 
 export default RunningPlanGenerator;
