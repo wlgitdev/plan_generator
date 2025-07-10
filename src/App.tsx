@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { LandingScreen } from "./components/LandingScreen";
 import { UserPreferencesScreen } from "./components/UserPreferencesScreen";
-import type { AppState, UnitPreferences } from "./types";
+import { FitnessAssessmentScreen } from "./components/FitnessAssessmentScreen";
+import type { AppState, UnitPreferences, FitnessAssessment } from "./types";
 import {
   loadUnitPreferences,
   isSessionStorageAvailable,
@@ -14,7 +15,7 @@ import {
 
 /**
  * Main application component handling screen navigation and state management
- * Implements Phase 1.1 (Landing) and 1.2 (User Preferences) functionality
+ * Implements Phase 1.1 (Landing), 1.2 (User Preferences), and 1.3 (Fitness Assessment)
  */
 export const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(() => {
@@ -73,13 +74,24 @@ export const App: React.FC = () => {
   };
 
   /**
-   * Handle completion of user preferences and navigate to next screen
+   * Handle completion of user preferences and navigate to fitness assessment
    */
   const handlePreferencesComplete = (preferences: UnitPreferences) => {
     setAppState((prevState) => ({
       ...prevState,
       unitPreferences: preferences,
-      currentScreen: "assessment", // Will be implemented in next phase
+      currentScreen: "assessment",
+    }));
+  };
+
+  /**
+   * Handle completion of fitness assessment and navigate to constraints screen
+   */
+  const handleAssessmentComplete = (assessment: FitnessAssessment) => {
+    setAppState((prevState) => ({
+      ...prevState,
+      fitnessAssessment: assessment,
+      currentScreen: "constraints", // Will be implemented in next phase
     }));
   };
 
@@ -90,6 +102,16 @@ export const App: React.FC = () => {
     setAppState((prevState) => ({
       ...prevState,
       currentScreen: "landing",
+    }));
+  };
+
+  /**
+   * Navigate back to preferences screen from assessment
+   */
+  const handleBackToPreferences = () => {
+    setAppState((prevState) => ({
+      ...prevState,
+      currentScreen: "preferences",
     }));
   };
 
@@ -126,33 +148,72 @@ export const App: React.FC = () => {
         );
 
       case "assessment":
+        return (
+          <FitnessAssessmentScreen
+            unitPreferences={appState.unitPreferences}
+            onComplete={handleAssessmentComplete}
+            onBack={handleBackToPreferences}
+          />
+        );
+
+      case "constraints":
         // Placeholder for next phase implementation
         return (
           <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4">
             <div className="text-center max-w-md">
               <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                Fitness Assessment
+                Training Constraints
               </h1>
               <p className="text-gray-600 mb-6">
                 This screen will be implemented in the next phase.
               </p>
               <button
                 onClick={handleBackToLanding}
-                className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 mb-4"
               >
                 Back to Landing
               </button>
 
-              {/* Display current preferences for verification */}
+              {/* Display current state for verification */}
               <div className="mt-8 p-4 bg-white rounded-lg shadow text-left">
                 <h3 className="font-semibold text-gray-900 mb-2">
-                  Current Preferences:
+                  Current State:
                 </h3>
                 <div className="text-sm text-gray-600 space-y-1">
-                  <p>System: {appState.unitPreferences.system}</p>
-                  <p>Pace Unit: {appState.unitPreferences.paceUnit}</p>
-                  <p>Distance Unit: {appState.unitPreferences.distanceUnit}</p>
-                  <p>Altitude Unit: {appState.unitPreferences.altitudeUnit}</p>
+                  <div>
+                    <strong>Unit System:</strong>{" "}
+                    {appState.unitPreferences.system}
+                  </div>
+                  {appState.fitnessAssessment && (
+                    <>
+                      <div>
+                        <strong>Experience:</strong>{" "}
+                        {appState.fitnessAssessment.experienceLevel}
+                      </div>
+                      <div>
+                        <strong>Weekly Mileage:</strong>{" "}
+                        {appState.fitnessAssessment.currentWeeklyMileage}{" "}
+                        {appState.unitPreferences.distanceUnit}
+                      </div>
+                      <div>
+                        <strong>Selected Plan:</strong>{" "}
+                        {appState.fitnessAssessment.selectedPlanLevel}
+                      </div>
+                      {appState.fitnessAssessment.calculatedFitnessScore && (
+                        <div>
+                          <strong>Fitness Score:</strong>{" "}
+                          {appState.fitnessAssessment.calculatedFitnessScore}
+                        </div>
+                      )}
+                      {appState.fitnessAssessment.raceInput && (
+                        <div>
+                          <strong>Race:</strong>{" "}
+                          {appState.fitnessAssessment.raceInput.distance} in{" "}
+                          {appState.fitnessAssessment.raceInput.time}
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>
