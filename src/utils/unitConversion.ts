@@ -1,4 +1,3 @@
-// utils/unitConversion.ts
 import type { UnitSystem, UnitPreferences, ConversionFactors } from "../types";
 
 export const CONVERSION_FACTORS: ConversionFactors = {

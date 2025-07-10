@@ -1,4 +1,3 @@
-// types.ts
 export type UnitSystem = "metric" | "imperial";
 
 export interface UnitPreferences {

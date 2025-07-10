@@ -1,4 +1,3 @@
-// utils/sessionStorage.ts
 import type { UnitPreferences } from "../types";
 
 const STORAGE_KEYS = {

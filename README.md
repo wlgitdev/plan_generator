@@ -1,69 +1,78 @@
-# React + TypeScript + Vite
+# Running Plan Generator - Phase 1 Implementation
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React-based single-page application for generating personalised running training plans.
 
-Currently, two official plugins are available:
+## Phase 1.1 & 1.2 Implementation Complete
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This implementation covers the first two screens of the application as specified in the UX design requirements:
 
-## Expanding the ESLint configuration
+### ✅ Phase 1.1 - Landing Screen
+- **Hero section** with scientific approach explanation
+- **Plan level overview cards** (Foundation, Intermediate, Advanced, Elite)
+- **Dual-unit display** showing both metric and imperial measurements
+- **Methodology credibility indicators** (Olympic Coach, Research-Based, Proven Results)
+- **Responsive design** with hover states and animations
+- **Clear call-to-action** to start assessment
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### ✅ Phase 1.2 - User Preferences Screen
+- **Unit system selector** with metric/imperial toggle
+- **Regional auto-detection** based on browser locale
+- **Live preview examples** showing how measurements will display
+- **Session storage persistence** for user preferences
+- **Real-time unit conversion** and preview updates
+- **Comprehensive measurement examples** (paces, distances, altitude)
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Project Structure
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── components/
+│   ├── LandingScreen.tsx          # Phase 1.1 implementation
+│   └── UserPreferencesScreen.tsx  # Phase 1.2 implementation
+├── data/
+│   └── planLevels.ts              # Static plan level data
+├── utils/
+│   ├── unitConversion.ts          # Unit conversion utilities
+│   └── sessionStorage.ts         # Storage abstraction
+├── types.ts                       # TypeScript definitions
+├── App.tsx                        # Main application component
+├── main.tsx                       # Application entry point
+├── index.css                      # Tailwind CSS and custom styles
+└── index.html                     # HTML template
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Running the Application
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Prerequisites
+- Node.js (v18+ recommended)
+- npm or yarn package manager
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Installation & Development
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Open browser to http://localhost:5173
 ```
+
+### Build for Production
+```bash
+# Create production build
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+
+## Browser Compatibility
+
+- **Modern browsers**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+- **JavaScript required**: Graceful fallback message for disabled JS
+- **Session storage**: Warning displayed if unavailable
+
+**Status**: Phase 1.1 & 1.2 Complete ✅  
+**Next**: Ready for Phase 1.3 (Fitness Assessment Screen) implementation

@@ -1,4 +1,3 @@
-// data/planLevels.ts
 import type { PlanLevel } from "../types";
 
 /**
