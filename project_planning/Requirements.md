@@ -448,7 +448,6 @@ WORKOUT_SPECIFICATION:
     safety_considerations: LIST[warning_strings]
   }
 ```
-```
 
 ---
 

@@ -1,30 +1,6 @@
 # UX Design
 ## Phase 1
 
-### Document Overview
-**Project**: Running Training Plan Generator  
-**Phase**: Phase 1 (Core Functionality)  
-**Stack**: React + TypeScript SPA  
-**Scope**: User Assessment → Plan Generation → PDF Export  
-
----
-
-### User Journey Flow
-
-#### Primary User Journey: Complete Plan Generation
-```
-Entry → Fitness Assessment → Constraints Setup → Plan Generation → Export
-```
-
-#### Journey Stages
-1. **Landing & Introduction** (Entry)
-2. **Fitness Level Assessment** (US-001, US-002)
-3. **Training Constraints** (US-003)
-4. **Plan Generation & Review** (US-005, US-006, US-007)
-5. **Export & Download** (US-011 subset)
-
----
-
 ### Screen-by-Screen UX Requirements
 
 #### 1. Landing Screen
@@ -174,50 +150,6 @@ Entry → Fitness Assessment → Constraints Setup → Plan Generation → Expor
 
 ---
 
-### Component Architecture Requirements
-
-#### Shared Components
-- **ProgressIndicator**: Multi-step progress bar
-- **ValidationMessage**: Consistent error/warning display
-- **PaceDisplay**: Standardized pace formatting
-- **InfoTooltip**: Educational content overlay
-- **LoadingSpinner**: Async operation feedback
-
-#### Page-Specific Components
-- **PlanLevelCard**: Experience level selection
-- **RaceTimeInput**: Formatted time entry with validation
-- **TrainingCalendar**: Weekly day selector
-- **PaceTable**: Training intensities display
-- **PhaseTimeline**: Plan structure visualization
-
----
-
-### Data Flow Requirements
-
-#### State Management
-```typescript
-interface AppState {
-  userProfile: UserProfile;
-  assessmentStep: number;
-  generatedPlan: TrainingPlan | null;
-  validationErrors: ValidationError[];
-}
-```
-
-#### Key Data Transformations
-1. **Race Time → Fitness Score**: Lookup table conversion
-2. **Fitness Score → Training Paces**: Embedded table lookup
-3. **User Inputs → Plan Structure**: Fixed template application
-4. **Altitude → Pace Adjustments**: Research-based modifications
-
-#### Validation Points
-- Real-time input validation
-- Cross-field constraint checking
-- Plan safety verification
-- Export readiness confirmation
-
----
-
 ### Responsive Design Requirements
 
 #### Breakpoints
@@ -280,30 +212,6 @@ interface AppState {
 - Recovery action suggestions
 
 ---
-
-### Success Metrics & Testing
-
-#### UX Success Criteria
-- **Completion Rate**: >85% from start to export
-- **Time to Complete**: <10 minutes average
-- **User Comprehension**: Post-export survey validation
-- **Error Recovery**: <3 attempts to resolve input errors
-
-#### Usability Testing Plan
-- **Moderated Sessions**: 8-10 users across experience levels
-- **Task Scenarios**: Complete journey with realistic data
-- **Key Observations**: Confusion points, validation clarity, pace understanding
-- **Success Validation**: Can users explain their generated plan?
-
----
-
-### Implementation Notes
-
-#### Technical Constraints
-- No backend dependencies
-- Embedded data tables only
-- Client-side plan generation
-- Browser-based PDF creation
 
 #### Development Phases
 1. **Core Flow**: Assessment → Generation → Basic Export
