@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document outlines the user journey for a single-page application (SPA) that generates personalised running training plans based on Jack Daniels' training methodology. The app serves runners from beginner to elite levels, generating structured plans and enabling export for external tracking.
+This document outlines the user journey for a single-page application (SPA) that generates personalised running training plans based on training methodology. The app serves runners from beginner to elite levels, generating structured plans and enabling export for external tracking.
 
 ## User Personas
 

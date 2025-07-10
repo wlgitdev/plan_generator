@@ -1,7 +1,7 @@
 import type { PlanLevel } from "../types";
 
 /**
- * Static data for the four plan levels based on Jack Daniels methodology
+ * Static data for the four plan levels based on methodology
  * Includes examples in both metric and imperial units for universal appeal
  */
 export const PLAN_LEVELS: PlanLevel[] = [

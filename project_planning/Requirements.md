@@ -1,9 +1,9 @@
 # Requirements Analysis Report
-## Jack Daniels Running Plan Generator SPA
+## Running Plan Generator SPA
 
 ### Executive Summary
 
-This report provides functional and technical requirements for a single-page application generating personalised running training plans based on Jack Daniels' methodology. The system captures user profiles, calculates training paces using complete VDOT tables, generates structured 24-week plans with flexible phases, and exports them in multiple formats.
+This report provides functional and technical requirements for a single-page application generating personalised running training plans based on methodology. The system captures user profiles, calculates training paces using complete VDOT tables, generates structured 24-week plans with flexible phases, and exports them in multiple formats.
 
 ---
 

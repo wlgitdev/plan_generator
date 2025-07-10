@@ -5,7 +5,7 @@ import App from "./App";
 import "./index.css";
 
 /**
- * Main entry point for the Jack Daniels Running Plan Generator
+ * Main entry point for the Running Plan Generator
  * Initializes React application with proper error boundaries
  */
 const initializeApp = (): void => {
