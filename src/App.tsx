@@ -1,14 +1,15 @@
-// App.tsx
 import React, { useState, useEffect } from "react";
 import { LandingScreen } from "./components/LandingScreen";
 import { UserPreferencesScreen } from "./components/UserPreferencesScreen";
 import { FitnessAssessmentScreen } from "./components/FitnessAssessmentScreen";
 import { TrainingConstraintsScreen } from "./components/TrainingConstraintsScreen";
+import { PlanGenerationScreen } from "./components/PlanGenerationScreen";
 import type {
   AppState,
   UnitPreferences,
   FitnessAssessment,
   TrainingConstraints,
+  GeneratedPlan,
 } from "./types";
 import {
   loadUnitPreferences,
@@ -21,13 +22,9 @@ import {
 
 /**
  * Main application component handling screen navigation and state management
- * Implements Phase 1.1 (Landing), 1.2 (User Preferences), 1.3 (Fitness Assessment), and 1.4 (Training Constraints)
  */
 export const App: React.FC = () => {
-  const [appState, setAppState] =
-    useState <
-    AppState >
-    (() => {
+  const [appState, setAppState] = useState<AppState>(() => {
     // Initialize with default preferences
     const defaultSystem = detectDefaultUnitSystem();
     const defaultPreferences = createUnitPreferences(defaultSystem);
@@ -38,6 +35,9 @@ export const App: React.FC = () => {
     };
   });
 
+  const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlan | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [storageAvailable] = useState(isSessionStorageAvailable());
 
@@ -111,7 +111,18 @@ export const App: React.FC = () => {
     setAppState((prevState) => ({
       ...prevState,
       trainingConstraints: constraints,
-      currentScreen: "generation", // Will be implemented in next phase
+      currentScreen: "generation",
+    }));
+  };
+
+  /**
+   * Handle completion of plan generation and navigate to export
+   */
+  const handlePlanGenerationComplete = (plan: GeneratedPlan) => {
+    setGeneratedPlan(plan);
+    setAppState((prevState) => ({
+      ...prevState,
+      currentScreen: "export",
     }));
   };
 
@@ -123,6 +134,7 @@ export const App: React.FC = () => {
       ...prevState,
       currentScreen: "landing",
     }));
+    setGeneratedPlan(null);
   };
 
   /**
@@ -142,6 +154,16 @@ export const App: React.FC = () => {
     setAppState((prevState) => ({
       ...prevState,
       currentScreen: "assessment",
+    }));
+  };
+
+  /**
+   * Navigate back to constraints screen from plan generation
+   */
+  const handleBackToConstraints = () => {
+    setAppState((prevState) => ({
+      ...prevState,
+      currentScreen: "constraints",
     }));
   };
 
@@ -211,15 +233,52 @@ export const App: React.FC = () => {
         );
 
       case "generation":
-        // Placeholder for next phase implementation
+        if (!appState.fitnessAssessment || !appState.trainingConstraints) {
+          // Fallback to constraints if missing data
+          console.warn(
+            "Missing required data for plan generation, redirecting to constraints"
+          );
+
+          if (!appState.fitnessAssessment) {
+            return (
+              <FitnessAssessmentScreen
+                unitPreferences={appState.unitPreferences}
+                onComplete={handleAssessmentComplete}
+                onBack={handleBackToPreferences}
+              />
+            );
+          }
+
+          return (
+            <TrainingConstraintsScreen
+              unitPreferences={appState.unitPreferences}
+              fitnessAssessment={appState.fitnessAssessment}
+              onComplete={handleConstraintsComplete}
+              onBack={handleBackToAssessment}
+            />
+          );
+        }
+
+        return (
+          <PlanGenerationScreen
+            unitPreferences={appState.unitPreferences}
+            fitnessAssessment={appState.fitnessAssessment}
+            trainingConstraints={appState.trainingConstraints}
+            onComplete={handlePlanGenerationComplete}
+            onBack={handleBackToConstraints}
+          />
+        );
+
+      case "export":
+        // Placeholder for Phase 2 - Export & Download Screen
         return (
           <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4">
             <div className="text-center max-w-md">
               <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                Plan Generation
+                Export & Download
               </h1>
               <p className="text-gray-600 mb-6">
-                This screen will be implemented in the next phase.
+                This screen will be implemented in Phase 2.
               </p>
               <button
                 onClick={handleBackToLanding}
@@ -228,76 +287,68 @@ export const App: React.FC = () => {
                 Back to Landing
               </button>
 
-              {/* Display current state for verification */}
+              {/* Display generated plan summary for verification */}
+              {generatedPlan && (
               <div className="mt-8 p-4 bg-white rounded-lg shadow text-left">
                 <h3 className="font-semibold text-gray-900 mb-2">
-                  Current State:
+                    Generated Plan Summary:
                 </h3>
                 <div className="text-sm text-gray-600 space-y-1">
                   <div>
-                    <strong>Unit System:</strong>{" "}
-                    {appState.unitPreferences.system}
+                      <strong>Plan Level:</strong> {generatedPlan.planLevel}
                   </div>
-                  {appState.fitnessAssessment && (
-                    <>
+                    <div>
+                      <strong>Unit System:</strong> {generatedPlan.unitSystem}
+                    </div>
+                    {generatedPlan.fitnessScore && (
                       <div>
-                        <strong>Experience:</strong>{" "}
-                        {appState.fitnessAssessment.experienceLevel}
+                        <strong>Fitness Score (VDOT):</strong>{" "}
+                        {generatedPlan.fitnessScore}
+                      </div>
+                    )}
+                    <div>
+                      <strong>Total Weeks:</strong>{" "}
+                      {generatedPlan.metadata.totalWeeks}
+                    </div>
+                    <div>
+                      <strong>Weekly Mileage Range:</strong>{" "}
+                      {generatedPlan.metadata.weeklyMileageRange.min}-
+                      {generatedPlan.metadata.weeklyMileageRange.max}{" "}
+                      {generatedPlan.metadata.weeklyMileageRange.unit}
+                    </div>
+                    <div>
+                      <strong>Time Commitment:</strong>{" "}
+                      {generatedPlan.metadata.estimatedTimeCommitment}
+                    </div>
+                    {generatedPlan.altitudeAdjustments && (
+                      <div>
+                        <strong>Altitude Adjustments:</strong> Applied for{" "}
+                        {generatedPlan.altitudeAdjustments.altitude.value.toLocaleString()}{" "}
+                        {generatedPlan.altitudeAdjustments.altitude.unit}
+                      </div>
+                    )}
+                    <div className="mt-3">
+                      <strong>Training Paces:</strong>
+                    </div>
+                    <div className="ml-4 space-y-1">
+                      <div>Easy: {generatedPlan.trainingPaces.easy.value}</div>
+                      <div>
+                        Marathon: {generatedPlan.trainingPaces.marathon.value}
                       </div>
                       <div>
-                        <strong>Weekly Mileage:</strong>{" "}
-                        {appState.fitnessAssessment.currentWeeklyMileage}{" "}
-                        {appState.unitPreferences.distanceUnit}
+                        Threshold: {generatedPlan.trainingPaces.threshold.value}
                       </div>
                       <div>
-                        <strong>Selected Plan:</strong>{" "}
-                        {appState.fitnessAssessment.selectedPlanLevel}
+                        Interval: {generatedPlan.trainingPaces.interval.value}
                       </div>
-                      {appState.fitnessAssessment.calculatedFitnessScore && (
-                        <div>
-                          <strong>Fitness Score:</strong>{" "}
-                          {appState.fitnessAssessment.calculatedFitnessScore}
+                      <div>
+                        Repetition:{" "}
+                        {generatedPlan.trainingPaces.repetition.value}
+                      </div>
                         </div>
-                      )}
-                      {appState.fitnessAssessment.raceInput && (
-                        <div>
-                          <strong>Race:</strong>{" "}
-                          {appState.fitnessAssessment.raceInput.distance} in{" "}
-                          {appState.fitnessAssessment.raceInput.time}
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {appState.trainingConstraints && (
-                    <>
-                      <div>
-                        <strong>Training Days:</strong>{" "}
-                        {
-                          appState.trainingConstraints.availableTrainingDays.filter(
-                            Boolean
-                          ).length
-                        }
-                        /week
-                      </div>
-                      <div>
-                        <strong>Session Duration:</strong>{" "}
-                        {appState.trainingConstraints.sessionDuration} min
-                      </div>
-                      <div>
-                        <strong>Goal Race:</strong>{" "}
-                        {appState.trainingConstraints.goalRace}
-                      </div>
-                      {appState.trainingConstraints.trainingAltitude && (
-                        <div>
-                          <strong>Training Altitude:</strong>{" "}
-                          {appState.trainingConstraints.trainingAltitude.toLocaleString()}{" "}
-                          {appState.unitPreferences.altitudeUnit}
-                        </div>
-                      )}
-                    </>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         );

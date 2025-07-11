@@ -137,3 +137,104 @@ export interface ConstraintValidation {
     withGoalRace: boolean;
   };
 }
+
+export interface GeneratedPlan {
+  id: string;
+  planLevel: string;
+  fitnessScore?: number;
+  unitSystem: UnitSystem;
+  trainingPaces: TrainingPacesWithUnits;
+  planStructure: PlanPhase[];
+  altitudeAdjustments?: AltitudeAdjustments;
+  constraints: TrainingConstraints;
+  metadata: PlanMetadata;
+}
+
+export interface TrainingPacesWithUnits {
+  easy: {
+    value: string;
+    unit: string;
+    description: string;
+    purpose: string;
+  };
+  marathon: {
+    value: string;
+    unit: string;
+    description: string;
+    purpose: string;
+  };
+  threshold: {
+    value: string;
+    unit: string;
+    description: string;
+    purpose: string;
+  };
+  interval: {
+    value: string;
+    unit: string;
+    description: string;
+    purpose: string;
+  };
+  repetition: {
+    value: string;
+    unit: string;
+    description: string;
+    purpose: string;
+  };
+}
+
+export interface PlanPhase {
+  id: number;
+  name: string;
+  duration: number; // weeks
+  focus: string;
+  description: string;
+  qualitySessions: number;
+  characteristics: string[];
+  exampleWeek: ExampleWeek;
+}
+
+export interface ExampleWeek {
+  totalMileage: {
+    value: number;
+    unit: string;
+  };
+  sessions: ExampleSession[];
+}
+
+export interface ExampleSession {
+  day: string;
+  type: "easy" | "long" | "quality" | "rest";
+  description: string;
+  duration?: string;
+  intensity?: string;
+  purpose: string;
+}
+
+export interface AltitudeAdjustments {
+  applied: boolean;
+  altitude: {
+    value: number;
+    unit: string;
+  };
+  adjustments: {
+    easy: string;
+    marathon: string;
+    threshold: string;
+    interval: string;
+    repetition: string;
+  };
+  explanation: string;
+}
+
+export interface PlanMetadata {
+  generatedAt: Date;
+  totalWeeks: number;
+  weeklyMileageRange: {
+    min: number;
+    max: number;
+    unit: string;
+  };
+  estimatedTimeCommitment: string;
+  progressionPrinciples: string[];
+}

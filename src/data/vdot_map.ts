@@ -345,7 +345,7 @@ export const vdot_map: VDOTMap = {
       marathon: "7:03",
       threshold: "6:24",
       interval: "6:22",
-      repetition: "6:7",
+      repetition: "6:17",
     },
     "31": {
       easy: "7:16",
@@ -734,3 +734,4 @@ export const vdot_map: VDOTMap = {
     },
   },
 };
+
