@@ -2,9 +2,9 @@
 
 A React-based single-page application for generating personalised running training plans.
 
-## Phase 1.1 & 1.2 Implementation Complete
+## Phase 1.1, 1.2 & 1.3 Implementation Complete
 
-This implementation covers the first two screens of the application as specified in the UX design requirements:
+This implementation covers the first three screens of the application as specified in the UX design requirements:
 
 ### ✅ Phase 1.1 - Landing Screen
 - **Hero section** with scientific approach explanation
@@ -22,23 +22,35 @@ This implementation covers the first two screens of the application as specified
 - **Real-time unit conversion** and preview updates
 - **Comprehensive measurement examples** (paces, distances, altitude)
 
+### ✅ Phase 1.3 - Fitness Assessment Screen
+- **Experience level assessment** with 4 levels and unit-aware mileage ranges
+- **Race performance input** (optional) with intelligent time matching
+- **Weekly mileage validation** with interactive slider and safety warnings
+- **VDOT fitness score calculation** from complete embedded lookup tables
+- **Training pace preview** showing all 5 intensity types when fitness calculated
+- **Plan recommendation system** with override capability and safety warnings
+- **Fuzzy race time matching** for approximate fitness scores with user feedback
+- **Real-time validation** with contextual guidance messages
+
 ## Project Structure
 
 ```
 src/
 ├── components/
-│   ├── LandingScreen.tsx          # Phase 1.1 implementation
-│   └── UserPreferencesScreen.tsx  # Phase 1.2 implementation
+│   ├── LandingScreen.tsx              # Phase 1.1 implementation
+│   ├── UserPreferencesScreen.tsx      # Phase 1.2 implementation
+│   └── FitnessAssessmentScreen.tsx    # Phase 1.3 implementation
 ├── data/
-│   └── planLevels.ts              # Static plan level data
+│   ├── fitnessData.ts                 # VDOT tables, experience levels, validation
+│   └── planLevels.ts                  # Static plan level data
 ├── utils/
-│   ├── unitConversion.ts          # Unit conversion utilities
-│   └── sessionStorage.ts         # Storage abstraction
-├── types.ts                       # TypeScript definitions
-├── App.tsx                        # Main application component
-├── main.tsx                       # Application entry point
-├── index.css                      # Tailwind CSS and custom styles
-└── index.html                     # HTML template
+│   ├── unitConversion.ts              # Unit conversion utilities
+│   └── sessionStorage.ts             # Storage abstraction
+├── types.ts                           # TypeScript definitions with VDOT types
+├── App.tsx                            # Main application component
+├── main.tsx                           # Application entry point
+├── index.css                          # Tailwind CSS and custom styles
+└── index.html                         # HTML template
 ```
 
 ## Running the Application
@@ -74,5 +86,9 @@ npm run preview
 - **JavaScript required**: Graceful fallback message for disabled JS
 - **Session storage**: Warning displayed if unavailable
 
-**Status**: Phase 1.1 & 1.2 Complete ✅  
-**Next**: Ready for Phase 1.3 (Fitness Assessment Screen) implementation
+## Implementation Status
+
+**Phase 1.1 ✅** - Landing Screen (Complete)  
+**Phase 1.2 ✅** - User Preferences Screen (Complete)  
+**Phase 1.3 ✅** - Fitness Assessment Screen (Complete)  
+**Phase 1.4** - Training Constraints Screen (Next)

@@ -5,20 +5,27 @@ import {
   CheckCircle,
   Info,
   Calculator,
+  Clock,
 } from "lucide-react";
-import type { UnitPreferences, FitnessAssessment, RaceInput } from "../types";
+import type {
+  UnitPreferences,
+  FitnessAssessment,
+  RaceInput,
+  TrainingPaces,
+} from "../types";
 import {
   EXPERIENCE_LEVELS,
   RACE_DISTANCES,
   calculateFitnessScore,
   getRecommendedPlan,
   validateMileageForExperience,
-  formatRaceTime,
   getExperienceLevelById,
   getRaceDistanceById,
+  getTrainingPaces,
+  findClosestRaceTime,
+  getExampleRaceTimes,
 } from "../data/fitnessData";
 import { PLAN_LEVELS } from "../data/planLevels";
-import { convertDistance } from "../utils/unitConversion";
 
 interface FitnessAssessmentScreenProps {
   unitPreferences: UnitPreferences;
@@ -45,6 +52,10 @@ export const FitnessAssessmentScreen: React.FC<
   const [calculatedFitnessScore, setCalculatedFitnessScore] = useState<
     number | null
   >(null);
+  const [trainingPaces, setTrainingPaces] = useState<TrainingPaces | null>(
+    null
+  );
+  const [raceTimeWarning, setRaceTimeWarning] = useState<string>("");
   const [validationMessages, setValidationMessages] = useState<string[]>([]);
 
   const isMetric = unitPreferences.system === "metric";
@@ -55,8 +66,25 @@ export const FitnessAssessmentScreen: React.FC<
     if (!experienceLevel) return;
 
     let fitnessScore = null;
+    let paces = null;
+    let timeWarning = "";
+
     if (includeRace && raceInput.distance && raceInput.time) {
+      // Try exact match first
       fitnessScore = calculateFitnessScore(raceInput.distance, raceInput.time);
+
+      if (!fitnessScore) {
+        // Try fuzzy matching for approximate fitness score
+        const closest = findClosestRaceTime(raceInput.distance, raceInput.time);
+        if (closest) {
+          fitnessScore = closest.fitnessScore;
+          timeWarning = `No exact match found. Using closest time ${closest.time} (VDOT ${fitnessScore}) for pace calculations.`;
+        }
+      }
+
+      if (fitnessScore) {
+        paces = getTrainingPaces(fitnessScore);
+      }
     }
 
     const recommendedPlan = getRecommendedPlan(
@@ -69,6 +97,8 @@ export const FitnessAssessmentScreen: React.FC<
     }
 
     setCalculatedFitnessScore(fitnessScore);
+    setTrainingPaces(paces);
+    setRaceTimeWarning(timeWarning);
   }, [experienceLevel, raceInput, includeRace, selectedPlanLevel]);
 
   // Validate inputs and generate warnings
@@ -105,10 +135,11 @@ export const FitnessAssessmentScreen: React.FC<
       includeRace &&
       raceInput.distance &&
       raceInput.time &&
-      !calculatedFitnessScore
+      !calculatedFitnessScore &&
+      !raceTimeWarning
     ) {
       messages.push(
-        "Unable to calculate fitness score from the provided race time. Please check the time format or try a different race result."
+        "Unable to calculate fitness score from the provided race time. Please check the time format matches the expected format for this distance."
       );
     }
 
@@ -174,11 +205,6 @@ export const FitnessAssessmentScreen: React.FC<
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
             Fitness Assessment
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Help us understand your current fitness level and running experience
-            to generate the most appropriate training plan. All measurements are
-            shown in {unitPreferences.system} units.
-          </p>
         </div>
 
         {/* Unit System Indicator */}
@@ -328,8 +354,8 @@ export const FitnessAssessmentScreen: React.FC<
                       placeholder={
                         getRaceDistanceById(raceInput.distance)?.timeFormat ===
                         "H:MM:SS"
-                          ? "H:MM:SS"
-                          : "MM:SS"
+                          ? "H:MM:SS (e.g., 1:45:30)"
+                          : "MM:SS (e.g., 22:30)"
                       }
                       value={raceInput.time}
                       onChange={(e) =>
@@ -338,12 +364,45 @@ export const FitnessAssessmentScreen: React.FC<
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     {raceInput.distance && (
-                      <p className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs text-gray-500 mt-1">
+                        <div>
                         Format:{" "}
                         {getRaceDistanceById(raceInput.distance)?.timeFormat}
-                      </p>
+                        </div>
+                        {(() => {
+                          const examples = getExampleRaceTimes(
+                            raceInput.distance
+                          );
+                          if (
+                            examples.beginner &&
+                            examples.intermediate &&
+                            examples.advanced
+                          ) {
+                            return (
+                              <div className="mt-1">
+                                Example times: {examples.beginner} (beginner) •{" "}
+                                {examples.intermediate} (intermediate) •{" "}
+                                {examples.advanced} (advanced)
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
                     )}
                   </div>
+                </div>
+              )}
+
+              {raceTimeWarning && (
+                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center space-x-2 text-yellow-700">
+                    <Clock className="h-5 w-5" />
+                    <span className="font-medium">Approximate Match</span>
+                  </div>
+                  <p className="text-sm text-yellow-600 mt-1">
+                    {raceTimeWarning}
+                  </p>
                 </div>
               )}
 
@@ -352,13 +411,58 @@ export const FitnessAssessmentScreen: React.FC<
                   <div className="flex items-center space-x-2 text-green-700">
                     <Calculator className="h-5 w-5" />
                     <span className="font-medium">
-                      Fitness Score Calculated: {calculatedFitnessScore}
+                      Fitness Score (VDOT): {calculatedFitnessScore}
                     </span>
                   </div>
                   <p className="text-sm text-green-600 mt-1">
                     This score will be used to calculate your personalized
                     training paces
                   </p>
+
+                  {trainingPaces && (
+                    <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-3">
+                      <div className="text-center">
+                        <div className="text-xs font-medium text-gray-700 mb-1">
+                          Easy
+                        </div>
+                        <div className="font-mono text-sm font-semibold text-green-700 bg-white px-2 py-1 rounded">
+                          {trainingPaces.easy}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs font-medium text-gray-700 mb-1">
+                          Marathon
+                        </div>
+                        <div className="font-mono text-sm font-semibold text-green-700 bg-white px-2 py-1 rounded">
+                          {trainingPaces.marathon}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs font-medium text-gray-700 mb-1">
+                          Threshold
+                        </div>
+                        <div className="font-mono text-sm font-semibold text-green-700 bg-white px-2 py-1 rounded">
+                          {trainingPaces.threshold}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs font-medium text-gray-700 mb-1">
+                          Interval
+                        </div>
+                        <div className="font-mono text-sm font-semibold text-green-700 bg-white px-2 py-1 rounded">
+                          {trainingPaces.interval}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs font-medium text-gray-700 mb-1">
+                          Repetition
+                        </div>
+                        <div className="font-mono text-sm font-semibold text-green-700 bg-white px-2 py-1 rounded">
+                          {trainingPaces.repetition}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </section>

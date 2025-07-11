@@ -1,6 +1,6 @@
 // components/LandingScreen.tsx
 import React from "react";
-import { ChevronRight, Award, Users, BookOpen, Target } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { PLAN_LEVELS } from "../data/planLevels";
 import type { PlanLevel } from "../types";
 
@@ -21,13 +21,8 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
       <section className="px-4 py-12 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Choose Your Training Level
+            Available Plans
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Four distinct plans designed for different experience levels and
-            time commitments. All distances shown in both metric and imperial
-            units.
-          </p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">

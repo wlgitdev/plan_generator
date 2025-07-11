@@ -12,16 +12,16 @@ export interface PlanLevel {
   name: string;
   targetGroup: string;
   weeklyMileageRange: {
-    metric: { min: number, max: number, unit: string },
-    imperial: { min: number, max: number, unit: string },
+    metric: { min: number; max: number; unit: string };
+    imperial: { min: number; max: number; unit: string };
   };
   qualitySessions: number;
   trainingDays: string;
   description: string;
   suitableFor: string[];
   exampleDistances: {
-    metric: { value: number, unit: string, description: string }[],
-    imperial: { value: number, unit: string, description: string }[],
+    metric: { value: number; unit: string; description: string }[];
+    imperial: { value: number; unit: string; description: string }[];
   };
 }
 
@@ -44,8 +44,8 @@ export interface ExperienceLevel {
   name: string;
   description: string;
   weeklyMileageRange: {
-    metric: { min: number, max: number },
-    imperial: { min: number, max: number },
+    metric: { min: number; max: number };
+    imperial: { min: number; max: number };
   };
   recommendedPlan: string;
   trainingDays: string;
@@ -56,10 +56,31 @@ export interface RaceDistance {
   id: string;
   name: string;
   distance: {
-    metric: { value: number, unit: string },
-    imperial: { value: number, unit: string },
+    metric: { value: number; unit: string };
+    imperial: { value: number; unit: string };
   };
   timeFormat: "MM:SS" | "H:MM:SS";
+}
+
+// VDOT Map Types
+export interface RaceTimes {
+  "5K": string;
+  "10K": string;
+  "Half Marathon": string;
+  Marathon: string;
+}
+
+export interface TrainingPaces {
+  easy: string;
+  marathon: string;
+  threshold: string;
+  interval: string;
+  repetition: string;
+}
+
+export interface VDOTMap {
+  raceTimes: Record<string, RaceTimes>;
+  paces: Record<string, TrainingPaces>;
 }
 
 export interface AppState {

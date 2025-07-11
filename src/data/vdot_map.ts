@@ -1,4 +1,6 @@
-export const vdot_map = {
+import type { VDOTMap } from "../types";
+
+export const vdot_map: VDOTMap = {
   raceTimes: {
     "30": {
       "5K": "30:40",
@@ -732,4 +734,3 @@ export const vdot_map = {
     },
   },
 };
-

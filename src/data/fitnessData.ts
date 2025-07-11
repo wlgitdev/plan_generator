@@ -1,4 +1,10 @@
-import type { ExperienceLevel, RaceDistance } from "../types";
+import type {
+  ExperienceLevel,
+  RaceDistance,
+  RaceTimes,
+  TrainingPaces,
+} from "../types";
+import { vdot_map } from "../data/vdot_map";
 
 /**
  * Experience levels with weekly mileage ranges and plan recommendations
@@ -81,25 +87,7 @@ export const EXPERIENCE_LEVELS: ExperienceLevel[] = [
  */
 export const RACE_DISTANCES: RaceDistance[] = [
   {
-    id: "1500m",
-    name: "1500m",
-    distance: {
-      metric: { value: 1500, unit: "m" },
-      imperial: { value: 0.93, unit: "mi" },
-    },
-    timeFormat: "MM:SS",
-  },
-  {
-    id: "mile",
-    name: "Mile",
-    distance: {
-      metric: { value: 1.61, unit: "km" },
-      imperial: { value: 1, unit: "mi" },
-    },
-    timeFormat: "MM:SS",
-  },
-  {
-    id: "5k",
+    id: "5K",
     name: "5K",
     distance: {
       metric: { value: 5, unit: "km" },
@@ -108,7 +96,7 @@ export const RACE_DISTANCES: RaceDistance[] = [
     timeFormat: "MM:SS",
   },
   {
-    id: "10k",
+    id: "10K",
     name: "10K",
     distance: {
       metric: { value: 10, unit: "km" },
@@ -117,7 +105,7 @@ export const RACE_DISTANCES: RaceDistance[] = [
     timeFormat: "MM:SS",
   },
   {
-    id: "half",
+    id: "Half Marathon",
     name: "Half Marathon",
     distance: {
       metric: { value: 21.1, unit: "km" },
@@ -126,7 +114,7 @@ export const RACE_DISTANCES: RaceDistance[] = [
     timeFormat: "H:MM:SS",
   },
   {
-    id: "marathon",
+    id: "Marathon",
     name: "Marathon",
     distance: {
       metric: { value: 42.2, unit: "km" },
@@ -142,145 +130,88 @@ export const RACE_DISTANCES: RaceDistance[] = [
  * Simplified implementation covering key fitness scores 30-85
  */
 export const RACE_TO_FITNESS: Record<string, Record<string, number>> = {
-  "5k": {
-    "30:00": 30,
-    "28:00": 32,
-    "26:00": 34,
-    "24:00": 36,
-    "22:30": 38,
-    "21:00": 40,
-    "19:30": 42,
-    "18:30": 44,
-    "17:30": 46,
-    "16:45": 48,
-    "16:00": 50,
-    "15:20": 52,
-    "14:45": 54,
-    "14:15": 56,
-    "13:45": 58,
-    "13:20": 60,
-    "12:55": 62,
-    "12:35": 64,
-    "12:15": 66,
-    "11:55": 68,
-    "11:40": 70,
-    "11:25": 72,
-    "11:10": 74,
-    "10:55": 76,
-    "10:40": 78,
-    "10:30": 80,
-    "10:15": 82,
-    "10:00": 84,
-    "9:45": 85,
-  },
-  "10k": {
-    "62:00": 30,
-    "58:00": 32,
-    "54:00": 34,
-    "50:00": 36,
-    "47:00": 38,
-    "44:00": 40,
-    "41:00": 42,
-    "38:30": 44,
-    "36:30": 46,
-    "35:00": 48,
-    "33:30": 50,
-    "32:00": 52,
-    "30:45": 54,
-    "29:30": 56,
-    "28:30": 58,
-    "27:30": 60,
-    "26:45": 62,
-    "26:00": 64,
-    "25:15": 66,
-    "24:30": 68,
-    "24:00": 70,
-    "23:30": 72,
-    "23:00": 74,
-    "22:30": 76,
-    "22:00": 78,
-    "21:30": 80,
-    "21:00": 82,
-    "20:30": 84,
-    "20:00": 85,
-  },
-  half: {
-    "2:20:00": 30,
-    "2:10:00": 32,
-    "2:00:00": 34,
-    "1:52:00": 36,
-    "1:45:00": 38,
-    "1:38:00": 40,
-    "1:32:00": 42,
-    "1:27:00": 44,
-    "1:22:30": 46,
-    "1:18:30": 48,
-    "1:15:00": 50,
-    "1:12:00": 52,
-    "1:09:00": 54,
-    "1:06:30": 56,
-    "1:04:00": 58,
-    "1:02:00": 60,
-    "1:00:00": 62,
-    "58:30": 64,
-    "57:00": 66,
-    "55:30": 68,
-    "54:00": 70,
-    "52:45": 72,
-    "51:30": 74,
-    "50:15": 76,
-    "49:00": 78,
-    "48:00": 80,
-    "47:00": 82,
-    "46:00": 84,
-    "45:00": 85,
-  },
-  marathon: {
-    "4:50:00": 30,
-    "4:30:00": 32,
-    "4:10:00": 34,
-    "3:55:00": 36,
-    "3:40:00": 38,
-    "3:25:00": 40,
-    "3:12:00": 42,
-    "3:00:00": 44,
-    "2:50:00": 46,
-    "2:42:00": 48,
-    "2:34:00": 50,
-    "2:28:00": 52,
-    "2:22:00": 54,
-    "2:17:00": 56,
-    "2:12:00": 58,
-    "2:08:00": 60,
-    "2:04:00": 62,
-    "2:01:00": 64,
-    "1:58:00": 66,
-    "1:55:00": 68,
-    "1:52:00": 70,
-    "1:49:30": 72,
-    "1:47:00": 74,
-    "1:44:30": 76,
-    "1:42:00": 78,
-    "1:40:00": 80,
-    "1:38:00": 82,
-    "1:36:00": 84,
-    "1:34:00": 85,
-  },
+  "5k": {},
+  "10k": {},
+  half: {},
+  marathon: {},
 };
 
 /**
- * Calculate fitness score from race performance
- * Returns fitness score or null if race time not found in tables
+ * Calculate fitness score from race performance using vdot_map
+ * Returns fitness score or null if race time not found
  */
 export const calculateFitnessScore = (
   raceDistance: string,
   raceTime: string
 ): number | null => {
-  const distanceTable = RACE_TO_FITNESS[raceDistance.toLowerCase()];
-  if (!distanceTable) return null;
+  // Search through all VDOT scores to find matching race time
+  for (const [vdotScore, raceTimes] of Object.entries(vdot_map.raceTimes)) {
+    const raceTimeForDistance = raceTimes[raceDistance as keyof RaceTimes];
+    if (raceTimeForDistance === raceTime) {
+      return parseInt(vdotScore);
+    }
+  }
+  return null;
+};
 
-  const fitnessScore = distanceTable[raceTime];
-  return fitnessScore || null;
+/**
+ * Get training paces for a given fitness score
+ * Returns pace object or null if fitness score not found
+ */
+export const getTrainingPaces = (
+  fitnessScore: number
+): TrainingPaces | null => {
+  return vdot_map.paces[fitnessScore.toString()] || null;
+};
+
+/**
+ * Get all available race times for a specific distance
+ * Useful for validation and suggestions
+ */
+export const getAvailableRaceTimes = (raceDistance: string): string[] => {
+  const times: string[] = [];
+  for (const [, raceTimes] of Object.entries(vdot_map.raceTimes)) {
+    const raceTimeForDistance = raceTimes[raceDistance as keyof RaceTimes];
+    if (raceTimeForDistance) {
+      times.push(raceTimeForDistance);
+    }
+  }
+  return times.sort();
+};
+
+/**
+ * Find closest race time in vdot_map for a given input
+ * Useful for approximate fitness score calculation
+ */
+export const findClosestRaceTime = (
+  raceDistance: string,
+  inputTime: string
+): { time: string; fitnessScore: number } | null => {
+  const availableTimes = getAvailableRaceTimes(raceDistance);
+  if (availableTimes.length === 0) return null;
+
+  // Convert time strings to seconds for comparison
+  const timeToSeconds = (timeStr: string): number => {
+    const parts = timeStr.split(":").map(Number);
+    if (parts.length === 2) return parts[0] * 60 + parts[1]; // MM:SS
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]; // H:MM:SS
+    return 0;
+  };
+
+  const inputSeconds = timeToSeconds(inputTime);
+  let closestTime = availableTimes[0];
+  let smallestDiff = Math.abs(timeToSeconds(availableTimes[0]) - inputSeconds);
+
+  for (const time of availableTimes) {
+    const diff = Math.abs(timeToSeconds(time) - inputSeconds);
+    if (diff < smallestDiff) {
+      smallestDiff = diff;
+      closestTime = time;
+    }
+  }
+
+  const fitnessScore = calculateFitnessScore(raceDistance, closestTime);
+  return fitnessScore ? { time: closestTime, fitnessScore } : null;
 };
 
 /**
@@ -365,6 +296,32 @@ export const getExperienceLevelById = (
   id: string
 ): ExperienceLevel | undefined => {
   return EXPERIENCE_LEVELS.find((level) => level.id === id);
+};
+
+/**
+ * Get race time for a specific VDOT score and distance
+ * Returns race time string or null if not found
+ */
+export const getRaceTimeForVDOT = (
+  vdotScore: number,
+  raceDistance: string
+): string | null => {
+  const raceTimes = vdot_map.raceTimes[vdotScore.toString()];
+  if (!raceTimes) return null;
+
+  return raceTimes[raceDistance as keyof RaceTimes] || null;
+};
+
+/**
+ * Get example race times for display purposes
+ * Returns object with beginner, intermediate, and advanced examples
+ */
+export const getExampleRaceTimes = (raceDistance: string) => {
+  return {
+    beginner: getRaceTimeForVDOT(40, raceDistance),
+    intermediate: getRaceTimeForVDOT(50, raceDistance),
+    advanced: getRaceTimeForVDOT(60, raceDistance),
+  };
 };
 
 /**
