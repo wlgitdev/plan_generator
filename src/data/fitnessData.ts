@@ -125,18 +125,6 @@ export const RACE_DISTANCES: RaceDistance[] = [
 ];
 
 /**
- * Race time to fitness score lookup table
- * Based on technical requirements TR-001 for complete fitness score tables
- * Simplified implementation covering key fitness scores 30-85
- */
-export const RACE_TO_FITNESS: Record<string, Record<string, number>> = {
-  "5k": {},
-  "10k": {},
-  half: {},
-  marathon: {},
-};
-
-/**
  * Calculate fitness score from race performance using vdot_map
  * Returns fitness score or null if race time not found
  */

@@ -39,6 +39,13 @@ export interface FitnessAssessment {
   selectedPlanLevel: string;
 }
 
+export interface TrainingConstraints {
+  availableTrainingDays: boolean[]; // 7 days, index 0 = Sunday
+  sessionDuration: number; // minutes
+  goalRace: string; // race distance ID
+  trainingAltitude?: number; // in user's preferred units
+}
+
 export interface ExperienceLevel {
   id: "beginner" | "recreational" | "serious" | "competitive";
   name: string;
@@ -60,6 +67,22 @@ export interface RaceDistance {
     imperial: { value: number; unit: string };
   };
   timeFormat: "MM:SS" | "H:MM:SS";
+}
+
+export interface GoalRace {
+  id: string;
+  name: string;
+  distance: {
+    metric: { value: number; unit: string };
+    imperial: { value: number; unit: string };
+  };
+  description: string;
+  focusAreas: string[];
+  typicalDuration: {
+    beginner: string;
+    intermediate: string;
+    advanced: string;
+  };
 }
 
 // VDOT Map Types
@@ -93,6 +116,7 @@ export interface AppState {
     | "export";
   unitPreferences: UnitPreferences;
   fitnessAssessment?: FitnessAssessment;
+  trainingConstraints?: TrainingConstraints;
 }
 
 export interface ConversionFactors {
@@ -102,4 +126,14 @@ export interface ConversionFactors {
   feetToMeters: number;
   paceKmToMile: number;
   paceMileToKm: number;
+}
+
+export interface ConstraintValidation {
+  isValid: boolean;
+  warnings: string[];
+  compatibility: {
+    withPlanLevel: boolean;
+    withExperience: boolean;
+    withGoalRace: boolean;
+  };
 }

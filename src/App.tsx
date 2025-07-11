@@ -3,7 +3,13 @@ import React, { useState, useEffect } from "react";
 import { LandingScreen } from "./components/LandingScreen";
 import { UserPreferencesScreen } from "./components/UserPreferencesScreen";
 import { FitnessAssessmentScreen } from "./components/FitnessAssessmentScreen";
-import type { AppState, UnitPreferences, FitnessAssessment } from "./types";
+import { TrainingConstraintsScreen } from "./components/TrainingConstraintsScreen";
+import type {
+  AppState,
+  UnitPreferences,
+  FitnessAssessment,
+  TrainingConstraints,
+} from "./types";
 import {
   loadUnitPreferences,
   isSessionStorageAvailable,
@@ -15,10 +21,13 @@ import {
 
 /**
  * Main application component handling screen navigation and state management
- * Implements Phase 1.1 (Landing), 1.2 (User Preferences), and 1.3 (Fitness Assessment)
+ * Implements Phase 1.1 (Landing), 1.2 (User Preferences), 1.3 (Fitness Assessment), and 1.4 (Training Constraints)
  */
 export const App: React.FC = () => {
-  const [appState, setAppState] = useState<AppState>(() => {
+  const [appState, setAppState] =
+    useState <
+    AppState >
+    (() => {
     // Initialize with default preferences
     const defaultSystem = detectDefaultUnitSystem();
     const defaultPreferences = createUnitPreferences(defaultSystem);
@@ -91,7 +100,18 @@ export const App: React.FC = () => {
     setAppState((prevState) => ({
       ...prevState,
       fitnessAssessment: assessment,
-      currentScreen: "constraints", // Will be implemented in next phase
+      currentScreen: "constraints",
+    }));
+  };
+
+  /**
+   * Handle completion of training constraints and navigate to plan generation
+   */
+  const handleConstraintsComplete = (constraints: TrainingConstraints) => {
+    setAppState((prevState) => ({
+      ...prevState,
+      trainingConstraints: constraints,
+      currentScreen: "generation", // Will be implemented in next phase
     }));
   };
 
@@ -112,6 +132,16 @@ export const App: React.FC = () => {
     setAppState((prevState) => ({
       ...prevState,
       currentScreen: "preferences",
+    }));
+  };
+
+  /**
+   * Navigate back to assessment screen from constraints
+   */
+  const handleBackToAssessment = () => {
+    setAppState((prevState) => ({
+      ...prevState,
+      currentScreen: "assessment",
     }));
   };
 
@@ -157,12 +187,36 @@ export const App: React.FC = () => {
         );
 
       case "constraints":
+        if (!appState.fitnessAssessment) {
+          // Fallback to assessment if no fitness data
+          console.warn(
+            "Missing fitness assessment data, redirecting to assessment"
+          );
+          return (
+            <FitnessAssessmentScreen
+              unitPreferences={appState.unitPreferences}
+              onComplete={handleAssessmentComplete}
+              onBack={handleBackToPreferences}
+            />
+          );
+        }
+
+        return (
+          <TrainingConstraintsScreen
+            unitPreferences={appState.unitPreferences}
+            fitnessAssessment={appState.fitnessAssessment}
+            onComplete={handleConstraintsComplete}
+            onBack={handleBackToAssessment}
+          />
+        );
+
+      case "generation":
         // Placeholder for next phase implementation
         return (
           <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4">
             <div className="text-center max-w-md">
               <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                Training Constraints
+                Plan Generation
               </h1>
               <p className="text-gray-600 mb-6">
                 This screen will be implemented in the next phase.
@@ -210,6 +264,34 @@ export const App: React.FC = () => {
                           <strong>Race:</strong>{" "}
                           {appState.fitnessAssessment.raceInput.distance} in{" "}
                           {appState.fitnessAssessment.raceInput.time}
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {appState.trainingConstraints && (
+                    <>
+                      <div>
+                        <strong>Training Days:</strong>{" "}
+                        {
+                          appState.trainingConstraints.availableTrainingDays.filter(
+                            Boolean
+                          ).length
+                        }
+                        /week
+                      </div>
+                      <div>
+                        <strong>Session Duration:</strong>{" "}
+                        {appState.trainingConstraints.sessionDuration} min
+                      </div>
+                      <div>
+                        <strong>Goal Race:</strong>{" "}
+                        {appState.trainingConstraints.goalRace}
+                      </div>
+                      {appState.trainingConstraints.trainingAltitude && (
+                        <div>
+                          <strong>Training Altitude:</strong>{" "}
+                          {appState.trainingConstraints.trainingAltitude.toLocaleString()}{" "}
+                          {appState.unitPreferences.altitudeUnit}
                         </div>
                       )}
                     </>
