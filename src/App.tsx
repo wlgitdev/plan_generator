@@ -19,6 +19,7 @@ import {
   createUnitPreferences,
   detectDefaultUnitSystem,
 } from "./utils/unitConversion";
+import { ExportDownloadScreen } from "./components/ExportDownloadScreen";
 
 /**
  * Main application component handling screen navigation and state management
@@ -113,6 +114,22 @@ export const App: React.FC = () => {
       trainingConstraints: constraints,
       currentScreen: "generation",
     }));
+  };
+
+  const handleBackToPlanGeneration = () => {
+    setAppState((prevState) => ({
+      ...prevState,
+      currentScreen: "generation",
+    }));
+  };
+
+  const handleExportComplete = () => {
+    // Reset to landing or show completion message
+    setAppState((prevState) => ({
+      ...prevState,
+      currentScreen: "landing",
+    }));
+    setGeneratedPlan(null);
   };
 
   /**
@@ -270,87 +287,29 @@ export const App: React.FC = () => {
         );
 
       case "export":
-        // Placeholder for Phase 2 - Export & Download Screen
+        if (!generatedPlan) {
+          // Fallback to generation if no plan data
+          console.warn(
+            "Missing generated plan data, redirecting to plan generation"
+          );
+          return (
+            <PlanGenerationScreen
+              unitPreferences={appState.unitPreferences}
+              fitnessAssessment={appState.fitnessAssessment!}
+              trainingConstraints={appState.trainingConstraints!}
+              onComplete={handlePlanGenerationComplete}
+              onBack={handleBackToConstraints}
+            />
+          );
+        }
+      
         return (
-          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4">
-            <div className="text-center max-w-md">
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                Export & Download
-              </h1>
-              <p className="text-gray-600 mb-6">
-                This screen will be implemented in Phase 2.
-              </p>
-              <button
-                onClick={handleBackToLanding}
-                className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 mb-4"
-              >
-                Back to Landing
-              </button>
-
-              {/* Display generated plan summary for verification */}
-              {generatedPlan && (
-              <div className="mt-8 p-4 bg-white rounded-lg shadow text-left">
-                <h3 className="font-semibold text-gray-900 mb-2">
-                    Generated Plan Summary:
-                </h3>
-                <div className="text-sm text-gray-600 space-y-1">
-                  <div>
-                      <strong>Plan Level:</strong> {generatedPlan.planLevel}
-                  </div>
-                    <div>
-                      <strong>Unit System:</strong> {generatedPlan.unitSystem}
-                    </div>
-                    {generatedPlan.fitnessScore && (
-                      <div>
-                        <strong>Fitness Score (VDOT):</strong>{" "}
-                        {generatedPlan.fitnessScore}
-                      </div>
-                    )}
-                    <div>
-                      <strong>Total Weeks:</strong>{" "}
-                      {generatedPlan.metadata.totalWeeks}
-                    </div>
-                    <div>
-                      <strong>Weekly Mileage Range:</strong>{" "}
-                      {generatedPlan.metadata.weeklyMileageRange.min}-
-                      {generatedPlan.metadata.weeklyMileageRange.max}{" "}
-                      {generatedPlan.metadata.weeklyMileageRange.unit}
-                    </div>
-                    <div>
-                      <strong>Time Commitment:</strong>{" "}
-                      {generatedPlan.metadata.estimatedTimeCommitment}
-                    </div>
-                    {generatedPlan.altitudeAdjustments && (
-                      <div>
-                        <strong>Altitude Adjustments:</strong> Applied for{" "}
-                        {generatedPlan.altitudeAdjustments.altitude.value.toLocaleString()}{" "}
-                        {generatedPlan.altitudeAdjustments.altitude.unit}
-                      </div>
-                    )}
-                    <div className="mt-3">
-                      <strong>Training Paces:</strong>
-                    </div>
-                    <div className="ml-4 space-y-1">
-                      <div>Easy: {generatedPlan.trainingPaces.easy.value}</div>
-                      <div>
-                        Marathon: {generatedPlan.trainingPaces.marathon.value}
-                      </div>
-                      <div>
-                        Threshold: {generatedPlan.trainingPaces.threshold.value}
-                      </div>
-                      <div>
-                        Interval: {generatedPlan.trainingPaces.interval.value}
-                      </div>
-                      <div>
-                        Repetition:{" "}
-                        {generatedPlan.trainingPaces.repetition.value}
-                      </div>
-                        </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <ExportDownloadScreen
+            unitPreferences={appState.unitPreferences}
+            generatedPlan={generatedPlan}
+            onBack={handleBackToPlanGeneration}
+            onComplete={handleExportComplete}
+          />
         );
 
       default:

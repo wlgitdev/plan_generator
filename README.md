@@ -1,10 +1,10 @@
-# Running Plan Generator - Phase 1 Implementation
+# Running Plan Generator
 
 A React-based single-page application for generating personalised running training plans.
 
-## Phase 1.1, 1.2 & 1.3 Implementation Complete
+## Phase 1 Implementation Complete ✅
 
-This implementation covers all four screens of Phase 1 as specified in the UX design requirements:
+This implementation covers all six screens of Phase 1 as specified in the UX design requirements:
 
 ### ✅ Phase 1.1 - Landing Screen
 - **Hero section** with scientific approach explanation
@@ -39,7 +39,7 @@ This implementation covers all four screens of Phase 1 as specified in the UX de
 - **Real-time constraint validation** and impact preview
 - **Comprehensive plan compatibility checking**
 
-### ✅ Phase 1.5 - Plan Generation & Review Screen (Complete)
+### ✅ Phase 1.5 - Plan Generation & Review Screen
 - **Personalized training paces** calculated from VDOT or estimated from experience
 - **20-week plan structure** with 4 progressive phases (Base → Tempo → Integration → Peak)
 - **Altitude adjustments** automatically applied when training above thresholds
@@ -47,6 +47,15 @@ This implementation covers all four screens of Phase 1 as specified in the UX de
 - **Interactive plan exploration** with expandable phase details
 - **Educational guidance** covering progression principles and safety guidelines
 - **Plan validation summary** with recommendations and warnings
+
+### ✅ Phase 1.6 - Export & Download Screen
+- **PDF export functionality** with user's preferred unit system
+- **Plan summary preview** showing key details before download
+- **Unit system confirmation** with optional conversion tables
+- **Progress indicator** during PDF generation
+- **Download completion feedback** with retry capability
+- **Next steps guidance** for plan implementation and tracking
+- **Error handling** with graceful retry mechanisms
 
 ## Technical Implementation
 
@@ -81,7 +90,8 @@ src/
 │   ├── UserPreferencesScreen.tsx     # Phase 1.2 - Unit system selection
 │   ├── FitnessAssessmentScreen.tsx   # Phase 1.3 - Experience and fitness evaluation
 │   ├── TrainingConstraintsScreen.tsx # Phase 1.4 - Schedule and goal constraints
-│   └── PlanGenerationScreen.tsx      # Phase 1.5 - Plan display and review
+│   ├── PlanGenerationScreen.tsx      # Phase 1.5 - Plan display and review
+│   └── ExportDownloadScreen.tsx      # Phase 1.6 - PDF export and download
 ├── data/                             # Static data and configurations
 │   ├── planLevels.ts                 # Plan level definitions (Foundation, Intermediate, Advanced, Elite)
 │   ├── fitnessData.ts                # Experience levels and VDOT calculation utilities
@@ -140,7 +150,6 @@ npm run type-check
 npm run lint
 ```
 
-
 ## Browser Compatibility
 
 - **Modern browsers**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
@@ -149,9 +158,9 @@ npm run lint
 
 ## Implementation Status
 
-**Phase 1.1 ✅** - Landing Screen (Complete)  
-**Phase 1.2 ✅** - User Preferences Screen (Complete)  
-**Phase 1.3 ✅** - Fitness Assessment Screen (Complete)  
-**Phase 1.4 ✅** - Training Constraints Screen (Complete)
-**Phase 1.5 ✅** - Plan Generation & Review Screen (Complete)
-**Next**: Phase 1.6 (Export & Download Screen) implementation
+- **Phase 1.1 ✅** - Landing Screen (Complete)  
+- **Phase 1.2 ✅** - User Preferences Screen (Complete)  
+- **Phase 1.3 ✅** - Fitness Assessment Screen (Complete)  
+- **Phase 1.4 ✅** - Training Constraints Screen (Complete)  
+- **Phase 1.5 ✅** - Plan Generation & Review Screen (Complete)  
+- **Phase 1.6 ✅** - Export & Download Screen (Complete)
