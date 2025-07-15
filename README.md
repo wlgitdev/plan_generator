@@ -89,6 +89,10 @@ src/
 │   ├── planGeneration.ts             # Core plan generation logic and algorithms
 │   └── vdot_map.ts                   # Complete VDOT lookup tables (30-85 scores)
 ├── utils/                            # Utility functions and helpers
+│   ├── __tests__/                    # Utility function tests
+│   ├──── unitConversion.ts
+│   ├──── sessionStorage.ts
+│   └──── constraintValidation.ts
 │   ├── unitConversion.ts             # Unit conversion engine with precision handling
 │   ├── sessionStorage.ts             # Storage abstraction with error handling
 │   └── constraintValidation.ts       # Training constraint validation and safety checks
