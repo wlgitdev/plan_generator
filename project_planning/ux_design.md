@@ -137,73 +137,92 @@ only use a limited amount of external libraries for components, if possible only
 ---
 
 #### 5. Plan Generation & Review Screen
-**Purpose**: Display generated plan with paces and structure (FR-022 to FR-037)
+**Purpose**: Display complete generated 20-week plan with paces and full structure (FR-022 to FR-037, FR-028-030)
 
 **Key Elements**:
 - **Training Paces Table**: All 5 intensities with contextual guidance in preferred units
   - Metric: Display as mm:ss/km with meters for track intervals
   - Imperial: Display as mm:ss/mi with yards for track intervals
 - **Unit Conversion Reference**: Expandable table showing equivalent paces in both systems
-- **Plan Structure Overview**: 4 phases with descriptions and timelines
-- **Weekly Sample**: Example week from each phase with distances in preferred units
-- **Safety Indicators**: Progression warnings and guidelines
-- **Educational Tooltips**: Pace explanations and workout purposes
+- **Fixed 4-Phase Structure**: 
+  - Phase I: 6 weeks base building
+  - Phase II: 5 weeks tempo introduction  
+  - Phase III: 5 weeks full intensity integration
+  - Phase IV: 4 weeks peak and race preparation
+- **Complete 20-Week Calendar**: Interactive view of all 140 daily workouts with expandable details
+- **Weekly Progression Charts**: Visual mileage increases and phase transitions
+- **Daily Workout Specifications**: Full details for each workout (type, pace, distance, duration, purpose)
 - **Altitude Adjustments**: Clear indication if altitude adjustments applied with unit-appropriate display
 
 **User Actions**:
-- Review calculated paces
-- Explore plan structure
-- Access educational content
-- Toggle unit conversion reference
-- Proceed to export
+- Review calculated paces and unit conversions
+- Navigate complete 20-week plan structure
+- Examine daily workout details for any of the 140 days
+- Explore phase progressions and weekly breakdowns
+- Access educational content and methodology explanations
+- Proceed to export complete plan
+
+**Validation Requirements**:
+- Fixed 6-5-5-4 week phase structure regardless of user inputs
+- 20-week total duration validation
+- Progressive volume increases within methodology limits
+- All workout paces match calculated training zones
+- Unit consistency across all 140 workout specifications
 
 **Success Criteria**:
-- Clear pace understanding in preferred units
-- Plan structure comprehension
-- Confidence in plan appropriateness
-- Easy access to unit conversions for reference
+- User can view every single daily workout (complete 140-day plan)
+- Clear understanding of 4-phase progression methodology
+- Confidence in pace zones and workout execution
+- Complete plan structure comprehension
+- Ready to implement daily training schedule
 
 **Technical Notes**:
-- Fitness-to-pace table lookup with unit conversion
-- Fixed plan structure generation
-- Altitude adjustments applied with unit-aware display
-- Educational content overlay system
-- Real-time unit conversion for reference
-
----
+- Generate complete 140 daily workout specifications
+- Implement immutable 6-5-5-4 week phase structure  
+- Calculate progressive weekly mileage within safety limits
+- Real-time unit conversion for all workout details
+- Plan serialization for export with complete workout database
 
 #### 6. Export & Download Screen
-**Purpose**: Generate and deliver training plan (FR-044 to FR-050)
+**Purpose**: Generate and deliver complete 20-week training plan (FR-044 to FR-050, FR-028-030)
 
 **Key Elements**:
 - **Export Options**: PDF format (Phase 1 scope) with unit system confirmation
-- **Plan Summary**: Key details preview in user's preferred units
+- **Complete Plan Preview**: Summary showing full 20-week structure with daily workout count
 - **Unit Reference Option**: Choice to include conversion tables in export
-- **Download Progress**: Generation status indicator
+- **Download Progress**: Generation status indicator for processing 140 workouts
 - **Success Confirmation**: Download completion feedback
-- **Next Steps Guidance**: How to use the plan with unit-specific examples
+- **Next Steps Guidance**: How to use the complete daily plan with unit-specific examples
 
 **User Actions**:
 - Confirm unit system for export
 - Choose to include conversion reference tables
-- Initiate PDF generation
-- Download completed plan
-- Access usage guidance
+- Review complete plan summary (140 daily workouts)
+- Initiate PDF generation of full 20-week plan
+- Download completed comprehensive plan
+- Access usage guidance for daily implementation
+
+**Validation Requirements**:
+- PDF contains all 140 daily workout specifications
+- Complete 6-5-5-4 week phase structure in export
+- All workout paces and distances in user's preferred units
+- Progressive weekly mileage accurately reflected
+- Unit consistency throughout entire 20-week plan export
 
 **Success Criteria**:
-- Reliable PDF generation with correct units
-- Clear download completion
-- User knows how to proceed
-- Optional conversion tables for flexibility
+- Reliable PDF generation with complete 20-week plan structure
+- All 140 daily workouts included with full specifications
+- Clear download completion confirmation
+- User receives implementable daily training schedule
+- Optional conversion tables for reference flexibility
 
 **Technical Notes**:
-- PDF generation with embedded pace tables in selected units
+- PDF generation with complete 140-workout database in selected units
+- Full phase structure serialization (6-5-5-4 weeks)
+- Weekly progression calculations embedded in export
 - Optional dual-unit conversion tables in export
-- Plan data serialization with unit metadata
-- Download progress feedback
-- Unit-consistent formatting throughout export
-
----
+- Complete plan data serialization with unit metadata
+- Download progress feedback for large plan generation
 
 ### Unit System Management
 
